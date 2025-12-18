@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from transit.models import Station
+from subway.models import Station
 from stories.models import Episode
-from activity.models import UserViewedEpisode
+from library.models import UserViewedEpisode
 import random
 
 def main_view(request):

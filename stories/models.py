@@ -1,5 +1,5 @@
 from django.db import models
-from transit.models import Station
+from subway.models import Station
 
 class Episode(models.Model):
     station = models.ForeignKey(Station, on_delete=models.CASCADE)
