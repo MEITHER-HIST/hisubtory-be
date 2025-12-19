@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>메인 페이지</title>
+</head>
+<body>
+<h1>메인 페이지</h1>
+
+<!-- 로그인 상태 -->
+{% if user %}
+    <p>{{ user.username }}님 안녕하세요. <a href="{% url 'mypage' %}">마이페이지</a> | <a href="{% url 'logout' %}">로그아웃</a></p>
+{% else %}
+    <p><a href="{% url 'login' %}">로그인</a> | <a href="{% url 'signup' %}">회원가입</a></p>
+{% endif %}
+
+<hr>
+
+<!-- 노선 선택 -->
+<h2>노선 선택</h2>
+<form method="get">
+    <select name="line" onchange="this.form.submit()">
+        {% for l in lines %}
+            <option value="{{ l }}" {% if l == line %}selected{% endif %}>{{ l }}</option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- 역 목록 -->
+<h2>역 목록</h2>
+<ul>
+    {% for station in stations %}
+        <li>{{ station.name }}</li>
+    {% endfor %}
+</ul>
+
+<!-- 랜덤 역 + 에피소드 -->
+{% if random_station %}
+    <h3>랜덤 선택: {{ random_station.name }}</h3>
+    {% if random_episode %}
+        <p>{{ random_episode.title }}</p>
+    {% else %}
+        <p>에피소드 없음</p>
+    {% endif %}
+{% endif %}
+</body>
+</html>
