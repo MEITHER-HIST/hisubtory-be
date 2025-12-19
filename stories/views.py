@@ -1,16 +1,16 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-from .services import generate_story_from_db
+from .services import get_or_generate_episode_logic
 
-def create_story_api(request, station_id):
-    story = generate_story_from_db(station_id)
-    
-    if story:
+def get_episode_api(request):
+    episode = get_or_generate_episode_logic()
+
+    if episode:
         return JsonResponse({
             "status": "success",
-            "story_id": story.id,
-            "images": [story.image_1.url, story.image_2.url, story.image_3.url, story.image_4.url],
-            "captions": [story.caption_1, story.caption_2, story.caption_3, story.caption_4]
+            "station_name": episode.station.station_name,
+            "episode_num": episode.episode_num,
+            "subtitle": episode.subtitle,
+            "history_summary": episode.history_summary,
+            "image_url": episode.source_url.url # 생성된 이미지 경로
         })
-    else:
-        return JsonResponse({"status": "error", "message": "생성 실패"}, status=500)
+    return JsonResponse({"status": "error", "message": "No data"}, status=404)
