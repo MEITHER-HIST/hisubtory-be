@@ -1,43 +1,38 @@
+# stories/services.py
 import requests
-import random
 from django.core.files.base import ContentFile
-from django.utils import timezone
-from .models import Episode, Station
+from django.conf import settings
 
-def get_or_generate_episode_logic():
-    # 1. 랜덤 역 선택
-    stations = Station.objects.all()
-    if not stations.exists():
+# 무료 AI 모델 URL (예: Stable Diffusion)
+API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+# 무료 토큰이 있다면 여기 입력 (없어도 테스트 가능하지만 횟수 제한이 있을 수 있음)
+HEADERS = {"Authorization": f"Bearer {getattr(settings, 'HUGGINGFACE_TOKEN', '')}"}
+
+def generate_episode_image_service(episode_instance):
+    """
+    에피소드의 요약본을 바탕으로 AI 이미지를 생성하여 source_url에 저장하는 서비스
+    """
+    if not episode_instance.history_summary:
+        print("⚠️ 요약 내용이 없어 이미지를 생성하지 않습니다.")
         return None
-    target_station = random.choice(stations)
 
-    # 2. 순환 로직: 미시청 에피소드 우선 -> 가장 오래전에 본 순서
-    episode = Episode.objects.filter(station=target_station).order_by('last_viewed_at').first()
-
-    if not episode:
-        return None
-
-    # 3. 이미지 생성 (시드 고정으로 화풍 유지)
-    if not episode.source_url:
-        # 에피소드 ID를 시드로 활용하여 일관성 확보
-        fixed_seed = episode.id + 777 
-        style_preset = "Clean modern Korean webtoon art style, digital line art, cel-shaded, vibrant, high quality"
-        prompt = f"{episode.subtitle}, {style_preset}"
+    # 프롬프트 구성
+    prompt = f"Historical scene of {episode_instance.station.name}: {episode_instance.history_summary}. cinematic, highly detailed, historical masterpiece."
+    
+    try:
+        # AI API 호출
+        response = requests.post(API_URL, headers=HEADERS, json={"inputs": prompt}, timeout=30)
         
-        api_url = f"https://image.pollinations.ai/prompt/{prompt}?seed={fixed_seed}&nologo=true"
-
-        try:
-            response = requests.get(api_url, timeout=60)
-            if response.status_code == 200:
-                filename = f"st{target_station.id}_ep{episode.episode_num}.png"
-                # DB 필드에 파일 저장
-                episode.source_url.save(filename, ContentFile(response.content), save=False)
-        except Exception as e:
-            print(f"생성 중 오류 발생: {e}")
+        if response.status_code == 200:
+            # 이미지 데이터를 ContentFile로 변환하여 저장
+            filename = f"ai_gen_{episode_instance.id}.jpg"
+            episode_instance.source_url.save(filename, ContentFile(response.content), save=True)
+            print(f"✅ [Service] AI 이미지 생성 및 저장 성공: {episode_instance.source_url.name}")
+            return episode_instance.source_url.url
+        else:
+            print(f"❌ [Service] API 호출 실패: {response.status_code} - {response.text}")
             return None
-
-    # 4. 마지막 노출 시간 갱신 (순환의 핵심)
-    episode.last_viewed_at = timezone.now()
-    episode.save()
-
-    return episode
+            
+    except Exception as e:
+        print(f"❌ [Service] 서버 에러 발생: {e}")
+        return None

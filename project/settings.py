@@ -10,7 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import pymysql
+import os
 from pathlib import Path
+pymysql.version_info = (2, 2, 1, 'final', 0)
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -82,9 +86,10 @@ DATABASES = {
         'NAME': 'hisubtory_db',
         'USER': 'admin',
         'PASSWORD': 'hisadmin',
-        'HOST': 'hisub-db.chmwc60iizys.ap-northeast-2.rds.amazonaws.com',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS':{
+            'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
         },
     }
@@ -140,3 +145,6 @@ AUTH_USER_MODEL = 'accounts.User'
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

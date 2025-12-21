@@ -21,4 +21,4 @@ class Episode(models.Model):
         unique_together = ('station', 'episode_num')
 
     def __str__(self):
-        return f"[{self.station.station_name}] Ep.{self.episode_num} - {self.subtitle}"
+        return f"[{self.station.name}] Ep.{self.episode_num} - {self.subtitle}"
