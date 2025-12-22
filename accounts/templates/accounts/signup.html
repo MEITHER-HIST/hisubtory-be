@@ -1,25 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Signup</title>
-</head>
-<body>
-    <h1>회원가입</h1>
-
-    {% if errors %}
-        <ul style="color:red;">
-            {% for error in errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-        <input name="username" placeholder="아이디">
-        <input type="password" name="password1" placeholder="비밀번호">
-        <input type="password" name="password2" placeholder="비밀번호 확인">
-        <button type="submit">가입</button>
-    </form>
-</body>
-</html>
+<h2>🚇 히서브토리 회원가입</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">가입하기</button>
+</form>
+<p>이미 계정이 있으신가요? <a href="{% url 'login' %}">로그인</a></p>

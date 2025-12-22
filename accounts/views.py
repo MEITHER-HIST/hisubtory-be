@@ -1,38 +1,39 @@
-from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+import json
 
-User = get_user_model()
-
-def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
-        if user:
+# [기능 1] 가입
+def signup_view(request):
+    from .forms import SignUpForm
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            from django.contrib.auth import login
             login(request, user)
             return redirect('main')
-        else:
-            return render(request, 'accounts/login.html', {'error': '아이디 또는 비밀번호 오류'})
-    return render(request, 'accounts/login.html')
+    else:
+        form = SignUpForm()
+    return render(request, 'accounts/signup.html', {'form': form})
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
+# [기능 2] 마이페이지 화면 보여주기
+@login_required
+def mypage_screen(request):
+    return render(request, 'accounts/mypage.html')
 
-def signup_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password1 = request.POST.get("password1")
-        password2 = request.POST.get("password2")
-        errors = []
-        if not username or not password1 or not password2:
-            errors.append("모든 값을 입력하세요.")
-        if password1 != password2:
-            errors.append("비밀번호가 일치하지 않습니다.")
-        if User.objects.filter(username=username).exists():
-            errors.append("이미 존재하는 아이디입니다.")
-        if errors:
-            return render(request, 'accounts/signup.html', {'errors': errors})
-        User.objects.create_user(username=username, password=password1)
-        return redirect('login')
-    return render(request, 'accounts/signup.html')
+# [기능 3] 마이페이지 데이터 보내주기
+@login_required
+def my_page_api(request):
+    try:
+        from library.models import UserActivity
+        user = request.user
+        recent = UserActivity.objects.filter(user=user).order_by('-last_viewed_at')[:5]
+        saved = UserActivity.objects.filter(user=user, is_saved=True)
+        
+        recent_data = [{"station": s.episode.station.name, "last_viewed": s.last_viewed_at.strftime("%Y-%m-%d %H:%M")} for s in recent]
+        saved_data = [{"station": s.episode.station.name, "image": s.episode.images.first().image.url if s.episode.images.exists() else None} for s in saved]
+        
+        return JsonResponse({"recent_stories": recent_data, "saved_stories": saved_data}, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

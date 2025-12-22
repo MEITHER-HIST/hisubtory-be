@@ -1,0 +1,137 @@
+test_map.html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>히서브토리 통합 테스트</title>
+    <style>
+        .station-btn { padding: 10px; margin: 5px; cursor: pointer; border: 1px solid #ccc; background: white; }
+        .visited { color: green; border: 2px solid green; font-weight: bold; }
+        #display-area, #mypage-area { margin-top: 20px; padding: 20px; border: 1px solid #333; min-height: 150px; border-radius: 10px; }
+        #display-area { border-style: dashed; background-color: #f9f9f9; }
+        #mypage-area { border-style: solid; background-color: #fff; }
+        .image-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; }
+        .episode-img { width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .caption { font-size: 0.8em; color: #666; text-align: center; }
+        .saved-item { display: inline-block; width: 120px; margin: 10px; vertical-align: top; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>🚇 히서브토리 통합 테스트</h1>
+    
+    <div id="station-list">
+        {% for item in station_data %}
+            <button class="station-btn {% if item.is_visited %}visited{% endif %}" 
+                    onclick="selectStation(event, {{ item.station.id }})">
+                {{ item.station.name }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <div id="display-area">
+        <h3 id="episode-title">결과 화면</h3>
+        <p id="episode-summary">역을 선택해 주세요.</p>
+        <div id="image-container" class="image-grid"></div>
+        <div id="action-button" style="margin-top: 20px;"></div>
+    </div>
+
+    <hr>
+
+    <h2>📂 마이페이지 테스트</h2>
+    <button onclick="loadMyPage()" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        마이페이지 정보 새로고침
+    </button>
+    <div id="mypage-area">
+        <p>버튼을 눌러 저장된 이야기를 확인하세요.</p>
+    </div>
+
+    <script>
+        // 에피소드 선택 함수
+        async function selectStation(event, sId) {
+            const title = document.getElementById('episode-title');
+            const summary = document.getElementById('episode-summary');
+            const container = document.getElementById('image-container');
+            const actionBtn = document.getElementById('action-button');
+
+            title.innerText = "⏳ 생성 중...";
+            summary.innerText = "AI가 이미지를 생성하고 있습니다. (약 30~40초 소요)";
+            container.innerHTML = ''; 
+            actionBtn.innerHTML = '';
+
+            try {
+                const response = await fetch(`/api/stories/select/${sId}/`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    title.innerText = data.title;
+                    summary.innerText = data.history_summary;
+
+                    if (data.images && data.images.length > 0) {
+                        data.images.forEach(img => {
+                            const div = document.createElement('div');
+                            div.innerHTML = `
+                                <img src="${img.url}" class="episode-img">
+                                <p class="caption">${img.caption}</p>
+                            `;
+                            container.appendChild(div);
+                        });
+                    }
+                    actionBtn.innerHTML = `<button onclick="saveStory(${data.id})" style="padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px;">⭐ 이 이야기 내 보관함에 저장하기</button>`;
+                    event.target.classList.add('visited');
+                }
+            } catch (e) {
+                console.error("에러 발생:", e);
+                title.innerText = "에러가 발생했습니다.";
+            }
+        }
+
+        // 이야기 저장 함수
+        async function saveStory(epId) {
+            const res = await fetch(`/api/library/save/${epId}/`, { 
+                method: 'POST', 
+                headers: {'X-CSRFToken': '{{ csrf_token }}'} 
+            });
+            const json = await res.json();
+            alert(json.message);
+            loadMyPage(); // 저장 후 마이페이지 자동 갱신
+        }
+
+        // 마이페이지 로드 함수 (복구됨!)
+        async function loadMyPage() {
+    try {
+        const res = await fetch(`/api/library/mypage/`);
+        const json = await res.json();
+        
+        // 1. 최근 본 역사 (목차) 부분
+        let html = "<h4>🕒 최근 본 역사 (목차 클릭 시 다시보기)</h4><ul>";
+        json.recent_stories.forEach(s => {
+            // s.station_id가 undefined가 되지 않도록 백엔드 key값과 맞춰줍니다.
+            html += `
+                <li style="cursor:pointer; color:blue; text-decoration:underline; margin-bottom:5px;" 
+                    onclick="selectStation(event, ${s.station_id})">
+                    <strong>${s.station}</strong> (${s.last_viewed})
+                </li>`;
+        });
+        html += "</ul><hr>";
+
+        // 2. 저장된 보관함 (이미지) 부분
+        html += "<h4>⭐ 저장된 보관함 (이미지 클릭 시 다시보기)</h4>";
+        if (json.saved_stories.length === 0) {
+            html += "<p>저장된 이야기가 없습니다.</p>";
+        } else {
+            json.saved_stories.forEach(s => {
+                html += `
+                    <div class="saved-item" onclick="selectStation(event, ${s.station_id})" style="cursor:pointer;">
+                        <img src="${s.image}" style="width:100px; height:100px; object-fit: cover; border-radius: 5px;">
+                        <br><strong>${s.station}</strong>
+                    </div>`;
+            });
+        }
+        document.getElementById('mypage-area').innerHTML = html;
+    } catch (e) {
+        console.error("마이페이지 로딩 에러:", e);
+    }
+}
+    </script>
+</body>
+</html>
