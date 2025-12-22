@@ -24,6 +24,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('', include('pages.urls')),
     path('api/stories/', include('stories.urls')),
+    path('api/library/', include('library.urls')),
 ]
 
 if settings.DEBUG:

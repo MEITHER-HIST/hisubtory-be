@@ -1,24 +1,24 @@
 from django.db import models
-from django.utils import timezone
-from subway.models import Station 
+from django.utils import timezone # 추가
 
 class Episode(models.Model):
-    # Station 모델을 직접 참조
-    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='episodes')
-    episode_num = models.IntegerField()
-    subtitle = models.CharField(max_length=255)  # AI 프롬프트 키워드
-    history_summary = models.TextField()       # 하단 자막/설명
-    
-    # 이미지 파일 저장 필드 (Pillow 설치 필수)
-    source_url = models.ImageField(upload_to='episodes/%Y/%m/', null=True, blank=True)
-    
-    # 순환 노출 및 생성 기록 필드
-    last_viewed_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    station = models.ForeignKey('subway.Station', on_delete=models.CASCADE)
+    episode_num = models.IntegerField(default=1)
+    title = models.CharField(max_length=200, default='제목 없음') # 기본값 추가
+    subtitle = models.CharField(max_length=200, blank=True, null=True, default='')
+    history_summary = models.TextField()
+    # default=timezone.now 를 추가하여 빈 데이터 문제 해결
+    last_viewed_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        # 특정 역 내에서 에피소드 번호 중복 방지
         unique_together = ('station', 'episode_num')
 
     def __str__(self):
-        return f"[{self.station.name}] Ep.{self.episode_num} - {self.subtitle}"
+        return f"[{self.station.name}] {self.title}"
+
+class EpisodeImage(models.Model):
+    # related_name='images'를 통해 episode.images.all()로 접근 가능합니다.
+    episode = models.ForeignKey(Episode, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='episode_images/')
+    caption = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)

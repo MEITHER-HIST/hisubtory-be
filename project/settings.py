@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
-    'subway',   
+    'subway',
     'stories',
     'library',
     'pages',
@@ -148,3 +148,5 @@ SECURE_SSL_REDIRECT = False
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+HUGGINGFACE_TOKEN = "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"

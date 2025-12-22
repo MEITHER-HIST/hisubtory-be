@@ -1,38 +1,54 @@
-# stories/services.py
-import requests
+import io, time
 from django.core.files.base import ContentFile
+from django.utils import timezone
+from huggingface_hub import InferenceClient
 from django.conf import settings
+from .models import Episode, EpisodeImage
 
-# 무료 AI 모델 URL (예: Stable Diffusion)
-API_URL = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
-# 무료 토큰이 있다면 여기 입력 (없어도 테스트 가능하지만 횟수 제한이 있을 수 있음)
-HEADERS = {"Authorization": f"Bearer {getattr(settings, 'HUGGINGFACE_TOKEN', '')}"}
-
-def generate_episode_image_service(episode_instance):
-    """
-    에피소드의 요약본을 바탕으로 AI 이미지를 생성하여 source_url에 저장하는 서비스
-    """
-    if not episode_instance.history_summary:
-        print("⚠️ 요약 내용이 없어 이미지를 생성하지 않습니다.")
-        return None
-
-    # 프롬프트 구성
-    prompt = f"Historical scene of {episode_instance.station.name}: {episode_instance.history_summary}. cinematic, highly detailed, historical masterpiece."
+def generate_four_images_service(episode_instance):
+    token = getattr(settings, 'HUGGINGFACE_TOKEN', None)
+    client = InferenceClient(api_key=token)
+    model_id = "stabilityai/stable-diffusion-xl-base-1.0"
     
-    try:
-        # AI API 호출
-        response = requests.post(API_URL, headers=HEADERS, json={"inputs": prompt}, timeout=30)
-        
-        if response.status_code == 200:
-            # 이미지 데이터를 ContentFile로 변환하여 저장
-            filename = f"ai_gen_{episode_instance.id}.jpg"
-            episode_instance.source_url.save(filename, ContentFile(response.content), save=True)
-            print(f"✅ [Service] AI 이미지 생성 및 저장 성공: {episode_instance.source_url.name}")
-            return episode_instance.source_url.url
-        else:
-            print(f"❌ [Service] API 호출 실패: {response.status_code} - {response.text}")
-            return None
+    if episode_instance.images.count() >= 4:
+        return episode_instance.images.all()
+
+    # 구도를 다르게 잡기 위한 프롬프트 리스트
+    prompts = [
+        f"A historical wide shot of {episode_instance.station.name} in 1920s, oil painting style",
+        f"Close up of {episode_instance.station.name} architectural detail, 1920s style, oil painting",
+        f"Vintage steam engine train at {episode_instance.station.name} platform, 1920s, oil painting",
+        f"People in 1920s Seoul fashion walking near {episode_instance.station.name}, oil painting"
+    ]
+
+    for i, p in enumerate(prompts, 1):
+        try:
+            print(f"🔄 {i}번째 이미지 생성 중...")
+            image = client.text_to_image(p, model=model_id)
             
-    except Exception as e:
-        print(f"❌ [Service] 서버 에러 발생: {e}")
-        return None
+            buffer = io.BytesIO()
+            image.save(buffer, format="PNG")
+            
+            # EpisodeImage 객체 생성
+            new_img = EpisodeImage(
+                episode=episode_instance,
+                caption=f"{episode_instance.station.name}의 풍경 {i}"
+            )
+            new_img.image.save(f"ep{episode_instance.id}_{i}_{int(time.time())}.png", ContentFile(buffer.getvalue()), save=True)
+            time.sleep(1) # API 안정성을 위한 짧은 휴식
+        except Exception as e:
+            print(f"❌ {i}번째 생성 실패 상세 에러: {e}") # 이렇게 수정해서 다시 실행해 보세요.
+
+    return episode_instance.images.all()
+
+def get_next_episode_with_ai_service(user, station_id):
+    episode = Episode.objects.filter(station_id=station_id).order_by('last_viewed_at').first()
+    if not episode: return None
+
+    # [수정] 이미지가 4개 미만이면 생성 함수 호출
+    if episode.images.count() < 4:
+        generate_four_images_service(episode)
+
+    episode.last_viewed_at = timezone.now()
+    episode.save()
+    return episode
