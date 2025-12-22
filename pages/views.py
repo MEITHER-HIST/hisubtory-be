@@ -1,13 +1,11 @@
-from django.shortcuts import render
-from subway.models import Station, Line, StationLine
+from django.shortcuts import render, redirect
+from subway.models import Station, Line
 from stories.models import Episode
 from library.models import UserViewedEpisode
-from accounts.models import User
-import random
 from django.contrib.auth.decorators import login_required
 from django.db.models import IntegerField
 from django.db.models.functions import Cast, Substr
-
+import random
 
 def main_view(request):
     # 1️⃣ 노선 목록 (1~9호선 숫자 순)
@@ -49,36 +47,20 @@ def main_view(request):
         station_data = {
             'id': s.id,
             'name': s.station_name,
-            'latitude': s.latitude,
-            'longitude': s.longitude,
             'clickable': bool(user),
             'color': 'green' if user and s.id in viewed_station_ids else 'gray'
         }
         station_list.append(station_data)
 
-    # 7️⃣ 랜덤 역/에피 계산 (버튼 클릭 시)
-    random_station = None
-    random_episode = None
+    # 7️⃣ 랜덤 스토리 버튼 클릭 시 바로 redirect
     if request.GET.get('random') == '1' and stations.exists():
+        candidate_stations = list(stations)
         if user:
-            # 로그인 O: 안 본 역 후보
             candidate_stations = [s for s in stations if s.id not in viewed_station_ids]
-
-            # 모든 역 봤거나 후보 없으면, 안 본 에피 있는 역 후보
-            if not candidate_stations:
-                candidate_stations = [s for s in stations if Episode.objects.filter(station=s).exclude(
-                    id__in=UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True)
-                ).exists()]
-
-            # 그래도 후보 없으면 모든 역에서 랜덤
             if not candidate_stations:
                 candidate_stations = list(stations)
-        else:
-            # 로그인 X: 전체 역에서 랜덤
-            candidate_stations = list(stations)
 
         random_station = random.choice(candidate_stations)
-
         episodes = Episode.objects.filter(station=random_station)
         if user:
             episodes = episodes.exclude(
@@ -88,6 +70,7 @@ def main_view(request):
             random_episode = random.choice(list(episodes))
             if user:
                 UserViewedEpisode.objects.get_or_create(user=user, episode=random_episode)
+            return redirect(f'/stories/{random_episode.id}/')
 
     # 8️⃣ 템플릿 전달
     context = {
@@ -95,36 +78,28 @@ def main_view(request):
         'selected_line': line_obj,
         'stations': station_list,
         'user': user,
-        'random_station': random_station,
-        'random_episode': random_episode,
     }
 
     return render(request, 'pages/main.html', context)
 
-
 @login_required
 def mypage_view(request):
     user = request.user
-
     recent_views = UserViewedEpisode.objects.filter(
         user=user
-    ).select_related(
-        'episode'
-    ).order_by('-viewed_at')[:10]
+    ).select_related('episode').order_by('-viewed_at')[:10]
 
     viewed_station_ids = set(
         recent_views.values_list('episode__station_id', flat=True)
     )
-
     viewed_stations = Station.objects.filter(id__in=viewed_station_ids)
-    all_stations = Station.objects.all()  # 마커 테스트용
 
     context = {
         'user': user,
         'recent_views': recent_views,
         'viewed_stations': viewed_stations,
         'viewed_station_ids': viewed_station_ids,
-        'all_stations': all_stations,
     }
     return render(request, 'pages/mypage.html', context)
+
 

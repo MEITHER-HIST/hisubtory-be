@@ -128,7 +128,7 @@
     {% for station in stations %}
         <li class="station {{ station.color }} {% if station.clickable %}clickable{% endif %}"
             {% if station.clickable %}
-                onclick="location.href='/stories/{{ station.id }}/'"
+                onclick="window.location.href='/stories/{{ station.id }}/'; setTimeout(() => { location.reload(); }, 50);"
             {% endif %}>
             {{ station.name }}
         </li>

@@ -1,13 +1,7 @@
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
-    # account 앱 URL 포함
-    path('account/', include('account.urls')),
-
-    # pages, stories API
-    path('api/v1/lines/', include('pages.urls_api')),
-    path('api/v1/stories/', include('stories.urls_api')),
+    # 에피소드 상세 페이지
+    path('<int:episode_id>/', views.episode_detail_view, name='episode_detail'),
 ]
