@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+</head>
+<body>
+<h1>{{ user.username }}님의 마이페이지</h1>
+<p>
+    <a href="{% url 'main' %}">메인으로</a> | 
+    <a href="{% url 'logout' %}">로그아웃</a>
+</p>
+
+<h2>최근 본 에피소드</h2>
+<ul>
+    {% for view in recent_views %}
+        <li>
+            <strong>역:</strong> {{ view.episode.station.station_name }} |
+            <strong>에피소드:</strong> {{ view.episode.title }} |
+            <strong>본 시간:</strong> {{ view.viewed_at }}
+        </li>
+    {% empty %}
+        <li>아직 본 에피소드가 없습니다.</li>
+    {% endfor %}
+</ul>
+
+<h2>저장한 에피소드</h2>
+<ul>
+    {% for view in recent_views %}
+        {% if view.saved %}
+            <li>
+                <strong>역:</strong> {{ view.episode.station.station_name }} |
+                <strong>에피소드:</strong> {{ view.episode.title }} |
+                <strong>저장 시간:</strong> {{ view.saved_at }}
+            </li>
+        {% endif %}
+    {% empty %}
+        <li>저장한 에피소드가 없습니다.</li>
+    {% endfor %}
+</ul>
+
+<h2>최근 본 역 목록</h2>
+<ul>
+    {% for station in viewed_stations %}
+        <li>{{ station.station_name }}</li>
+    {% empty %}
+        <li>최근 본 역이 없습니다.</li>
+    {% endfor %}
+</ul>
+
+<h2>마커 색 표시용 (테스트)</h2>
+<ul>
+    {% for station in all_stations %}
+        <li>
+            {{ station.station_name }} - 
+            {% if station.id in viewed_station_ids %}
+                <span style="color:green;">본 역</span>
+            {% else %}
+                <span style="color:gray;">미본 역</span>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+</body>

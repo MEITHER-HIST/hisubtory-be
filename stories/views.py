@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from django.http import JsonResponse
 from django.shortcuts import render
 from .models import Episode
@@ -82,3 +83,24 @@ def test_map_view(request):
         station_data.append({'station': s, 'is_visited': is_visited})
         
     return render(request, 'stories/test_map.html', {'station_data': station_data})
+=======
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from .models import Episode
+from .serializers import EpisodeSerializer
+from subway.models import Station
+import random
+
+@api_view(['GET'])
+def station_stories(request, station_id):
+    station = get_object_or_404(Station, id=station_id)
+    episodes = Episode.objects.filter(station=station)
+
+    if episodes.exists():
+        episode = random.choice(episodes)
+        serializer = EpisodeSerializer(episode)
+        return Response(serializer.data)
+    else:
+        return Response({"message": "해당 역의 스토리가 없습니다."}, status=404)
+>>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13

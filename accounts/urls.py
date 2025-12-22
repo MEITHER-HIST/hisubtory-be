@@ -1,4 +1,5 @@
 from django.urls import path
+<<<<<<< HEAD
 from django.contrib.auth import views as auth_views
 from . import views
 
@@ -12,4 +13,13 @@ urlpatterns = [
     
     # [데이터] JS가 내부적으로 데이터를 호출하는 주소
     path('api/mypage/', views.my_page_api, name='mypage_api'),
+=======
+from . import views
+
+urlpatterns = [
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('signup/', views.signup_view, name='signup'),
+    path('me/', views.me_view, name='me'),
+>>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
 ]

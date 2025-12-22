@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <h2>🚇 히서브토리 회원가입</h2>
 <form method="post">
     {% csrf_token %}
@@ -5,3 +6,54 @@
     <button type="submit">가입하기</button>
 </form>
 <p>이미 계정이 있으신가요? <a href="{% url 'login' %}">로그인</a></p>
+=======
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+</head>
+<body>
+
+<h2>회원가입</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    <!-- 사용자 이름 -->
+    <div>
+        {{ form.username.label_tag }}
+        {{ form.username }}
+        {{ form.username.errors }}
+    </div>
+
+    <!-- 비밀번호 -->
+    <div>
+        {{ form.password1.label_tag }}
+        {{ form.password1 }}
+        {{ form.password1.errors }}
+    </div>
+
+    <!-- 비밀번호 확인 -->
+    <div>
+        {{ form.password2.label_tag }}
+        {{ form.password2 }}
+        {{ form.password2.errors }}
+    </div>
+
+    <!-- 이메일 -->
+    <div>
+        {{ form.email.label_tag }}
+        {{ form.email }}
+        {{ form.email.errors }}
+    </div>
+
+    <!-- 폼 전체 에러 -->
+    {{ form.non_field_errors }}
+
+    <button type="submit">회원가입</button>
+</form>
+
+</body>
+</html>
+>>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13

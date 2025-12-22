@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<<<<<<< HEAD
     <title>히서브토리 - 역사 여행</title>
     <style>
         /* 기본 스타일 */
@@ -114,5 +115,151 @@
             // 저장 후 별도의 피드백이 필요하다면 여기에 추가
         }
     </script>
+=======
+    <meta charset="UTF-8">
+    <title>메인 페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        header a {
+            margin-left: 10px;
+            text-decoration: none;
+            color: #007bff;
+            font-size: 0.9rem;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        .line-select {
+            margin-bottom: 20px;
+        }
+
+        /* ===== 역 목록 ===== */
+        .stations-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stations-list li {
+            margin: 5px;
+            padding: 8px 12px;
+            min-width: 80px;
+            text-align: center;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            transition: background 0.2s;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: default;
+        }
+
+        .stations-list li.clickable {
+            cursor: pointer;
+        }
+
+        .station.gray {
+            background: #eee;
+            color: #555;
+        }
+
+        .station.green {
+            background: #c8f7c5;
+            color: #155724;
+        }
+
+        /* ===== 랜덤 버튼 ===== */
+        .random-btn-wrapper {
+            margin-top: 20px; /* 상단 마진으로 역 목록과 구분 */
+        }
+
+        .random-btn-wrapper button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #007bff;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .random-btn-wrapper button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    {% if user.is_authenticated %}
+        <span>{{ user.username }}님 안녕하세요.</span>
+        <a href="{% url 'mypage' %}">마이페이지</a>
+        <a href="{% url 'logout' %}">로그아웃</a>
+    {% else %}
+        <a href="{% url 'login' %}">로그인</a>
+        <a href="{% url 'signup' %}">회원가입</a>
+    {% endif %}
+</header>
+
+<h1>메인 페이지</h1>
+
+<!-- 노선 선택 -->
+<div class="line-select">
+    <form method="get">
+        <select name="line" onchange="this.form.submit()">
+            {% for l in lines %}
+                <option value="{{ l.line_name|slice:':-2' }}"
+                    {% if selected_line and l.id == selected_line.id %}selected{% endif %}>
+                    {{ l.line_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<!-- 역 목록 -->
+<h2>역 목록</h2>
+<ul class="stations-list">
+    {% for station in stations %}
+        <li class="station {{ station.color }} {% if station.clickable %}clickable{% endif %}"
+            {% if station.clickable %}
+                onclick="location.href='/stories/{{ station.id }}/'"
+            {% endif %}>
+            {{ station.name }}
+        </li>
+    {% empty %}
+        <li>역이 없습니다.</li>
+    {% endfor %}
+</ul>
+
+<!-- 랜덤 스토리 버튼 (역 목록 아래) -->
+<div class="random-btn-wrapper">
+    <form method="get">
+        <input type="hidden" name="line" value="{{ selected_line.line_name|default:'3호선' }}">
+        <button type="submit" name="random" value="1">랜덤 스토리 보기</button>
+    </form>
+</div>
+
+>>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
 </body>
 </html>
