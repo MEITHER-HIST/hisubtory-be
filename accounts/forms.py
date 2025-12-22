@@ -1,4 +1,23 @@
 from django import forms
+<<<<<<< HEAD
+from django.contrib.auth.forms import UserCreationForm
+from .models import User
+
+class SignUpForm(UserCreationForm):
+    # 이메일을 필수 항목으로 지정하고 싶을 때 추가 (선택사항)
+    email = forms.EmailField(required=True)
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        # username(ID), email 두 가지만 지정 (비밀번호 2개는 기본 포함됨)
+        fields = ("username", "email")
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # 닉네임을 입력받지 않으므로, 기본값을 아이디(username)로 설정해둡니다.
+        if not user.nickname:
+            user.nickname = user.username
+=======
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -36,6 +55,7 @@ class SignupForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
+>>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
         if commit:
             user.save()
         return user
