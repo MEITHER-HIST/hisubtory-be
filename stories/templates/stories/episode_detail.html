@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ episode.title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        img { max-width: 100%; height: auto; margin: 20px 0; border-radius: 5px; }
+        a.btn { display: inline-block; margin-top: 20px; padding: 8px 12px; background-color: #28a745; color: white; border-radius: 4px; text-decoration: none; }
+        a.btn:hover { background-color: #218838; }
+        a.back { display: inline-block; margin-top: 20px; text-decoration: none; color: #007bff; }
+        a.back:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>{{ episode.title }}</h1>
+
+    {% if episode.image %}
+        <img src="{{ episode.image.url }}" alt="{{ episode.title }}">
+    {% endif %}
+
+    <p>{{ episode.content }}</p>
+
+    <!-- 새로운 에피 보기 버튼 -->
+    {% if new_episode_button %}
+        <a href="?next=true" class="btn">새로운 에피 보기</a>
+    {% endif %}
+
+    <a href="{% url 'main' %}" class="back">메인으로 돌아가기</a>
+</body>
+</html>

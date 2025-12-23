@@ -1,69 +1,81 @@
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import render, get_object_or_404
 from .models import Episode
 from subway.models import Station
 from library.models import UserViewedEpisode
 import random
 
-# --- 1. 역 클릭 시 해당 역 랜덤 에피소드 선택 후 main 페이지로 redirect ---
-def station_stories(request, station_id):
+# ===== 브라우저용 뷰 =====
+def episode_detail_view(request, episode_id):
+    user = request.user if request.user.is_authenticated else None
+    episode = get_object_or_404(Episode, id=episode_id)
+    new_episode_button = False
+
+    if user:
+        station_id = episode.station.id
+        viewed_episodes = UserViewedEpisode.objects.filter(user=user, episode__station_id=station_id)
+        if viewed_episodes.exists():
+            new_episode_button = True
+
+        if request.GET.get('next') == 'true':
+            unseen_episodes = Episode.objects.filter(station_id=station_id).exclude(
+                id__in=viewed_episodes.values_list('episode_id', flat=True)
+            )
+            if unseen_episodes.exists():
+                episode = random.choice(list(unseen_episodes))
+                UserViewedEpisode.objects.get_or_create(user=user, episode=episode)
+            new_episode_button = False
+
+    context = {
+        'episode': episode,
+        'new_episode_button': new_episode_button,
+    }
+    return render(request, 'stories/episode_detail.html', context)
+
+
+# ===== API용 뷰 =====
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import EpisodeSerializer
+
+@api_view(['GET'])
+def station_stories_api(request, station_id):
+    """
+    JSON 형태로 반환하는 API 엔드포인트
+    - 로그인 유저: 이미 본/안 본 에피 구분
+    - 로그인 X: 랜덤 에피 반환
+    """
     station = get_object_or_404(Station, id=station_id)
+    user = request.user if request.user.is_authenticated else None
+
     episodes = Episode.objects.filter(station=station)
     if not episodes.exists():
-        return redirect('/')
+        return Response({"message": "해당 역의 스토리가 없습니다."}, status=404)
 
-    # 랜덤 에피 선택
-    episode = random.choice(list(episodes))
+    prev_episode = None
+    new_episode_available = False
+    not_viewed_episodes = list(episodes)
 
-    # 로그인 유저면 클릭만으로 본 기록 저장
-    if request.user.is_authenticated:
-        UserViewedEpisode.objects.get_or_create(user=request.user, episode=episode)
+    if user:
+        viewed_ids = set(UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True))
+        already_viewed = [ep for ep in episodes if ep.id in viewed_ids]
+        not_viewed_episodes = [ep for ep in episodes if ep.id not in viewed_ids]
 
-    # main_view로 line 파라미터 붙여서 redirect
-    line_name = station.stationline.first().line.line_name  # 예: "3호선"
-    return redirect(f'/?line={line_name[:-2]}')
+        if already_viewed:
+            prev_episode = already_viewed[-1]  # 직전에 본 에피
+        if not_viewed_episodes:
+            new_episode_available = True
 
-# --- 2. 에피소드 상세 페이지 ---
-def episode_detail_view(request, episode_id):
-    episode = get_object_or_404(Episode, id=episode_id)
+    # 보여줄 에피 선택
+    episode_to_show = random.choice(not_viewed_episodes) if not_viewed_episodes else random.choice(list(episodes))
 
-    # 로그인 유저면 본 기록 저장
-    if request.user.is_authenticated:
-        UserViewedEpisode.objects.get_or_create(user=request.user, episode=episode)
+    # DB 기록 남기기 (로그인 유저만)
+    if user:
+        UserViewedEpisode.objects.get_or_create(user=user, episode=episode_to_show)
 
-    return render(request, 'stories/detail.html', {'episode': episode})
-
-# --- 3. 전체 역 랜덤 스토리 버튼 ---
-def random_episode_view(request):
-    stations = Station.objects.filter(is_enabled=True)
-    if not stations.exists():
-        return redirect('/')
-
-    if request.user.is_authenticated:
-        viewed_station_ids = UserViewedEpisode.objects.filter(
-            user=request.user
-        ).values_list('episode__station_id', flat=True)
-
-        candidate_stations = [s for s in stations if s.id not in viewed_station_ids]
-        if not candidate_stations:
-            candidate_stations = list(stations)
-    else:
-        candidate_stations = list(stations)
-
-    random_station = random.choice(candidate_stations)
-    episodes = Episode.objects.filter(station=random_station)
-
-    if request.user.is_authenticated:
-        episodes = episodes.exclude(
-            id__in=UserViewedEpisode.objects.filter(user=request.user).values_list('episode_id', flat=True)
-        )
-
-    if not episodes.exists():
-        return redirect('/')
-
-    random_episode = random.choice(list(episodes))
-    if request.user.is_authenticated:
-        UserViewedEpisode.objects.get_or_create(user=request.user, episode=random_episode)
-
-    # main_view로 line 파라미터 붙여서 redirect
-    line_name = random_station.stationline.first().line.line_name
-    return redirect(f'/?line={line_name[:-2]}')
+    # JSON 응답
+    data = {
+        "episode": EpisodeSerializer(episode_to_show).data,
+        "prev_episode": EpisodeSerializer(prev_episode).data if prev_episode else None,
+        "new_episode_available": new_episode_available
+    }
+    return Response(data) 
