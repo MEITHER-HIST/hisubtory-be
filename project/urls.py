@@ -23,12 +23,6 @@ from . import views
 urlpatterns = [
     path("health/", views.health),
     path('admin/', admin.site.urls),
-    path('account/', include('accounts.urls')), 
+    path('accounts/', include('accounts.urls')),
     path('', include('pages.urls')),
-    path('api/stories/', include('stories.urls')),
-    path('api/library/', include('library.urls')),
-    path('api/accounts/', include('accounts.urls')),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
