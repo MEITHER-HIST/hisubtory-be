@@ -3,15 +3,41 @@ from subway.models import Station, Line
 from stories.models import Episode
 from library.models import UserViewedEpisode
 from django.contrib.auth.decorators import login_required
-from django.db.models import IntegerField
+from django.db.models import IntegerField, Case, When
+from django.db.models.functions import Cast, Substr
+import random
+
+from django.shortcuts import render, redirect
+from subway.models import Station, Line
+from stories.models import Episode
+from library.models import UserViewedEpisode
+from django.contrib.auth.decorators import login_required
+from django.db.models import IntegerField, Case, When
 from django.db.models.functions import Cast, Substr
 import random
 
 def main_view(request):
-    # 1️⃣ 노선 목록 (1~9호선 숫자 순)
+    # 1️⃣ 노선 목록 (1~9호선 숫자 순, 3호선 맨 위)
     lines = Line.objects.annotate(
-        line_number=Cast(Substr('line_name', 1, 1), IntegerField())
-    ).order_by('line_number')
+        line_number=Cast(Substr('line_name', 1, 1), IntegerField()),
+        priority=Case(
+            When(line_name='3호선', then=0),  # 3호선 우선
+            default=1,
+            output_field=IntegerField()
+        )
+    ).order_by('priority', 'line_number')
+
+    # 1-1️⃣ 3호선을 제외한 나머지 이름 뒤에 (준비중) 추가
+    line_list = []
+    for line in lines:
+        display_name = line.line_name
+        if line.line_name != '3호선':
+            display_name += ' (준비중)'
+        line_list.append({
+            'id': line.id,
+            'line_name': display_name,
+            'is_active': line.line_name == '3호선'
+        })
 
     # 2️⃣ 선택된 노선 (default: 3호선)
     line_num = request.GET.get('line', '3')
@@ -113,7 +139,7 @@ def main_view(request):
 
     # 10️⃣ 템플릿 전달
     context = {
-        'lines': lines,
+        'lines': line_list,  # 수정된 라인 리스트 전달
         'selected_line': line_obj,
         'stations': station_list,
         'user': user,

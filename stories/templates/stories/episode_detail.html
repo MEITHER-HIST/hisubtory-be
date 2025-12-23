@@ -5,9 +5,15 @@
     <title>{{ episode.title }}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-        img { max-width: 100%; height: auto; margin: 20px 0; border-radius: 5px; }
-        a.btn { display: inline-block; margin-top: 20px; padding: 8px 12px; background-color: #28a745; color: white; border-radius: 4px; text-decoration: none; }
-        a.btn:hover { background-color: #218838; }
+        .cut img { max-width: 100%; height: auto; margin: 10px 0; border-radius: 5px; }
+        .caption { text-align: center; font-size: 14px; color: #555; margin-bottom: 20px; }
+        .btn, .bookmark-btn { display: inline-block; margin-top: 10px; padding: 8px 12px; border-radius: 4px; text-decoration: none; cursor: pointer; }
+        .btn { background-color: #28a745; color: white; }
+        .btn:hover { background-color: #218838; }
+        .bookmark-btn { background-color: #ffc107; color: black; border: none; }
+        .bookmark-btn:hover { background-color: #e0a800; }
+        .other-episodes { margin-top: 30px; }
+        .other-episodes li { margin-bottom: 5px; }
         a.back { display: inline-block; margin-top: 20px; text-decoration: none; color: #007bff; }
         a.back:hover { text-decoration: underline; }
     </style>
@@ -15,15 +21,41 @@
 <body>
     <h1>{{ episode.title }}</h1>
 
-    {% if episode.image %}
-        <img src="{{ episode.image.url }}" alt="{{ episode.title }}">
-    {% endif %}
-
-    <p>{{ episode.content }}</p>
+    <!-- 컷 4개 + 캡션 -->
+    {% for cut in cuts %}
+        <div class="cut">
+            <img src="{{ cut.image.url }}" alt="컷 {{ forloop.counter }}">
+            {% if cut.caption %}
+                <p class="caption">{{ cut.caption }}</p>
+            {% endif %}
+        </div>
+    {% endfor %}
 
     <!-- 새로운 에피 보기 버튼 -->
     {% if new_episode_button %}
         <a href="?next=true" class="btn">새로운 에피 보기</a>
+    {% endif %}
+
+    <!-- 북마크 버튼 (로그인 시) -->
+    {% if user.is_authenticated %}
+        <form method="post" action="{% url 'toggle_bookmark' episode.id %}">
+            {% csrf_token %}
+            <button type="submit" class="bookmark-btn">
+                {% if is_bookmarked %}북마크 취소{% else %}북마크{% endif %}
+            </button>
+        </form>
+    {% endif %}
+
+    <!-- 다른 에피소드 선택 -->
+    {% if other_episodes %}
+        <div class="other-episodes">
+            <h3>다른 에피소드 선택</h3>
+            <ul>
+                {% for ep in other_episodes %}
+                    <li><a href="{% url 'episode_detail' ep.id %}">{{ ep.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 
     <a href="{% url 'main' %}" class="back">메인으로 돌아가기</a>
