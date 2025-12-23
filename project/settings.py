@@ -1,4 +1,3 @@
-
 """
 Django settings for project project.
 
@@ -11,16 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import pymysql
-import os
 from pathlib import Path
-<<<<<<< HEAD
-pymysql.version_info = (2, 2, 1, 'final', 0)
-pymysql.install_as_MySQLdb()
-=======
 import os
 from dotenv import load_dotenv
->>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
-    'subway',
+    'subway',   
     'stories',
     'library',
     'pages',
@@ -92,20 +84,6 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-<<<<<<< HEAD
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'hisubtory_db',
-        'USER': 'admin',
-        'PASSWORD': 'hisadmin',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS':{
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-        },
-=======
 USE_SQLITE = os.getenv("USE_SQLITE", "1") == "1"
 if USE_SQLITE:
     DATABASES = {
@@ -127,7 +105,6 @@ else:
                 "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
             },
         }
->>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
     }
 
 # Password validation
@@ -178,16 +155,4 @@ AUTH_USER_MODEL = 'accounts.User'
 
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
-<<<<<<< HEAD
 SECURE_SSL_REDIRECT = False
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-HUGGINGFACE_TOKEN = "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"
-
-LOGIN_URL = '/api/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
-=======
-SECURE_SSL_REDIRECT = False
->>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
