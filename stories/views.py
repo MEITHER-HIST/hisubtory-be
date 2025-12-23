@@ -67,11 +67,6 @@ from .serializers import EpisodeSerializer
 
 @api_view(['GET'])
 def station_stories_api(request, station_id):
-    """
-    JSON 형태로 반환하는 API 엔드포인트
-    - 로그인 유저: 이미 본/안 본 에피 구분
-    - 로그인 X: 랜덤 에피 반환
-    """
     station = get_object_or_404(Station, id=station_id)
     user = request.user if request.user.is_authenticated else None
 
@@ -79,6 +74,7 @@ def station_stories_api(request, station_id):
     if not episodes.exists():
         return Response({"message": "해당 역의 스토리가 없습니다."}, status=404)
 
+    # 로그인 유저 처리
     prev_episode = None
     new_episode_available = False
     not_viewed_episodes = list(episodes)
@@ -99,10 +95,15 @@ def station_stories_api(request, station_id):
     # DB 기록 남기기 (로그인 유저만)
     if user:
         UserViewedEpisode.objects.get_or_create(user=user, episode=episode_to_show)
+        # 북마크 상태 추가
+        is_bookmarked = Bookmark.objects.filter(user=user, episode=episode_to_show).exists()
+    else:
+        is_bookmarked = False
 
     data = {
-        "episode": EpisodeSerializer(episode_to_show).data,
+        "episode": EpisodeSerializer(episode_to_show).data,  # 컷 4개 포함
         "prev_episode": EpisodeSerializer(prev_episode).data if prev_episode else None,
-        "new_episode_available": new_episode_available
+        "new_episode_available": new_episode_available,
+        "is_bookmarked": is_bookmarked
     }
     return Response(data) 
