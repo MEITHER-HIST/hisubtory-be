@@ -35,7 +35,6 @@
             margin-bottom: 20px;
         }
 
-        /* ===== 역 목록 ===== */
         .stations-list {
             list-style: none;
             padding: 0;
@@ -72,9 +71,8 @@
             color: #155724;
         }
 
-        /* ===== 랜덤 버튼 ===== */
         .random-btn-wrapper {
-            margin-top: 20px; /* 상단 마진으로 역 목록과 구분 */
+            margin-top: 20px; 
         }
 
         .random-btn-wrapper button {
@@ -108,7 +106,6 @@
 
 <h1>메인 페이지</h1>
 
-<!-- 노선 선택 -->
 <div class="line-select">
     <form method="get">
         <select name="line" onchange="this.form.submit()">
@@ -122,22 +119,24 @@
     </form>
 </div>
 
-<!-- 역 목록 -->
 <h2>역 목록</h2>
 <ul class="stations-list">
     {% for station in stations %}
-        <li class="station {{ station.color }} {% if station.clickable %}clickable{% endif %}"
-            {% if station.clickable %}
-                onclick="window.location.href='/stories/{{ station.id }}/'; setTimeout(() => { location.reload(); }, 50);"
-            {% endif %}>
-            {{ station.name }}
-        </li>
-    {% empty %}
-        <li>역이 없습니다.</li>
+        {% if station.clickable %}
+            <li class="station {{ station.color }} clickable">
+                <a href="?line={{ selected_line.line_name|slice:':-2' }}&clicked_station={{ station.id }}" 
+                   style="text-decoration:none; color: inherit; display:block;">
+                    {{ station.name }}
+                </a>
+            </li>
+        {% else %}
+            <li class="station {{ station.color }}">
+                {{ station.name }}
+            </li>
+        {% endif %}
     {% endfor %}
 </ul>
 
-<!-- 랜덤 스토리 버튼 (역 목록 아래) -->
 <div class="random-btn-wrapper">
     <form method="get">
         <input type="hidden" name="line" value="{{ selected_line.line_name|default:'3호선' }}">

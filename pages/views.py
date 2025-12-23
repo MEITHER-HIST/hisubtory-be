@@ -30,7 +30,7 @@ def main_view(request):
             is_enabled=True
         ).distinct()
 
-    # 4️⃣ 로그인 유저
+    # 4️⃣ 로그인 유저 확인
     user = request.user if request.user.is_authenticated else None
 
     # 5️⃣ 유저가 본 역 ID 목록
@@ -41,7 +41,28 @@ def main_view(request):
             .values_list('episode__station_id', flat=True)
         )
 
-    # 6️⃣ 역 상태 계산
+    # 6️⃣ 클릭한 역 처리 → DB 기록 + 랜덤 미시청 에피소드로 이동
+    clicked_station_id = request.GET.get('clicked_station')
+    if clicked_station_id and user:
+        try:
+            clicked_station_id = int(clicked_station_id)
+            episodes = Episode.objects.filter(station_id=clicked_station_id)
+            # 미시청 에피소드만 선택
+            episodes = episodes.exclude(
+                id__in=UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True)
+            )
+            # 미시청이 없으면 전체 에피소드 fallback
+            if not episodes.exists():
+                episodes = Episode.objects.filter(station_id=clicked_station_id)
+            # 에피소드가 있으면 랜덤 선택 후 redirect
+            if episodes.exists():
+                random_episode = random.choice(list(episodes))
+                UserViewedEpisode.objects.get_or_create(user=user, episode=random_episode)
+                return redirect(f'/stories/{random_episode.id}/')
+        except ValueError:
+            pass
+
+    # 7️⃣ 역 상태 계산 (DB 기록 기준으로 초록불 결정)
     station_list = []
     for s in stations:
         station_data = {
@@ -52,7 +73,7 @@ def main_view(request):
         }
         station_list.append(station_data)
 
-    # 7️⃣ 랜덤 스토리 버튼 클릭 시 바로 redirect
+    # 8️⃣ 랜덤 스토리 버튼 클릭 시 바로 redirect
     if request.GET.get('random') == '1' and stations.exists():
         candidate_stations = list(stations)
         if user:
@@ -68,11 +89,10 @@ def main_view(request):
             )
         if episodes.exists():
             random_episode = random.choice(list(episodes))
-            if user:
-                UserViewedEpisode.objects.get_or_create(user=user, episode=random_episode)
+            UserViewedEpisode.objects.get_or_create(user=user, episode=random_episode)
             return redirect(f'/stories/{random_episode.id}/')
 
-    # 8️⃣ 템플릿 전달
+    # 9️⃣ 템플릿 전달
     context = {
         'lines': lines,
         'selected_line': line_obj,
@@ -82,9 +102,11 @@ def main_view(request):
 
     return render(request, 'pages/main.html', context)
 
+
 @login_required
 def mypage_view(request):
     user = request.user
+
     recent_views = UserViewedEpisode.objects.filter(
         user=user
     ).select_related('episode').order_by('-viewed_at')[:10]
@@ -101,5 +123,4 @@ def mypage_view(request):
         'viewed_station_ids': viewed_station_ids,
     }
     return render(request, 'pages/mypage.html', context)
-
 
