@@ -10,7 +10,7 @@ import random
 from django.shortcuts import render, redirect
 from subway.models import Station, Line
 from stories.models import Episode
-from library.models import UserViewedEpisode
+from library.models import UserViewedEpisode, Bookmark
 from django.contrib.auth.decorators import login_required
 from django.db.models import IntegerField, Case, When
 from django.db.models.functions import Cast, Substr
@@ -151,10 +151,22 @@ def main_view(request):
 @login_required
 def mypage_view(request):
     user = request.user
+
+    # 최근 본 이야기
     recent_views = UserViewedEpisode.objects.filter(
         user=user
-    ).select_related('episode').order_by('-viewed_at')[:10]
+    ).select_related('episode', 'episode__station').order_by('-viewed_at')[:10]
 
+    # 북마크한 에피소드
+    bookmarked_episodes = Bookmark.objects.filter(
+        user=user
+    ).select_related('episode', 'episode__station').order_by('-created_at')
+
+    # 에피소드 수 계산
+    recent_count = recent_views.count()
+    bookmark_count = bookmarked_episodes.count()
+
+    # 최근 본 역 ID 목록 (기존 용도 유지)
     viewed_station_ids = set(
         recent_views.values_list('episode__station_id', flat=True)
     )
@@ -163,6 +175,9 @@ def mypage_view(request):
     context = {
         'user': user,
         'recent_views': recent_views,
+        'bookmarked_episodes': bookmarked_episodes,
+        'recent_count': recent_count,
+        'bookmark_count': bookmark_count,
         'viewed_stations': viewed_stations,
         'viewed_station_ids': viewed_station_ids,
     }
