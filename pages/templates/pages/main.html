@@ -1,121 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-<<<<<<< HEAD
-    <title>히서브토리 - 역사 여행</title>
-    <style>
-        /* 기본 스타일 */
-        .station-btn { padding: 10px; margin: 5px; cursor: pointer; border: 1px solid #ccc; background: white; border-radius: 5px; }
-        .station-btn:hover { background-color: #f0f0f0; }
-        #display-area { margin-top: 20px; padding: 20px; border: 1px dashed #333; min-height: 200px; background-color: #fafafa; }
-        .image-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; }
-        .episode-img { width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .caption { font-size: 0.8em; color: #666; text-align: center; }
-        
-        /* 헤더 링크 스타일 */
-        .logo-link { text-decoration: none; color: inherit; }
-        .logo-link:hover { opacity: 0.8; }
-        nav { background: #f8f9fa; padding: 10px; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <h1>
-        <a href="{% url 'main' %}" class="logo-link">🚇 히서브토리: 지하철 역사 여행</a>
-    </h1>
-
-    <nav>
-        {% if user.is_authenticated %}
-            <p>
-                <strong>{{ user.nickname|default:user.username }}</strong>님 환영합니다! 
-                <a href="{% url 'mypage' %}"><button style="cursor:pointer; padding:5px 10px;">내 보관함(마이페이지)</button></a> | 
-                
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" style="cursor:pointer; padding:5px 10px;">로그아웃</button>
-                </form>
-            </p>
-        {% else %}
-            <p>
-                <a href="{% url 'login' %}">로그인</a> | 
-                <a href="{% url 'signup' %}">회원가입</a>
-            </p>
-        {% endif %}
-    </nav>
-    <hr>
-
-    <h2>🛤️ 노선 선택</h2>
-    <form method="get">
-        <select name="line" onchange="this.form.submit()">
-            {% for l in lines %}
-                <option value="{{ l }}" {% if l == line %}selected{% endif %}>{{ l }}</option>
-            {% endfor %}
-        </select>
-    </form>
-
-    <h2>📍 역 목록 (역을 클릭해 보세요!)</h2>
-    <div id="station-list">
-        {% for station in stations %}
-            <button class="station-btn" onclick="selectStation(event, {{ station.id }})">
-                {{ station.name }}
-            </button>
-        {% endfor %}
-    </div>
-
-    <div id="display-area">
-        <h3 id="episode-title">역을 선택하면 이야기가 시작됩니다.</h3>
-        <p id="episode-summary"></p>
-        <div id="image-container" class="image-grid"></div>
-        <div id="action-button" style="margin-top: 15px;"></div>
-    </div>
-
-    <script>
-        // 에피소드 선택 및 생성
-        async function selectStation(event, sId) {
-            const title = document.getElementById('episode-title');
-            const summary = document.getElementById('episode-summary');
-            const container = document.getElementById('image-container');
-            const actionBtn = document.getElementById('action-button');
-
-            title.innerText = "⏳ 생성 중...";
-            summary.innerText = "AI가 역사 데이터를 분석하여 이미지를 그리고 있습니다. (30초 소요)";
-            container.innerHTML = '';
-            actionBtn.innerHTML = '';
-
-            try {
-                const response = await fetch(`/api/stories/select/${sId}/`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    title.innerText = data.title;
-                    summary.innerText = data.history_summary;
-                    
-                    data.images.forEach(img => {
-                        const div = document.createElement('div');
-                        div.innerHTML = `<img src="${img.url}" class="episode-img"><p class="caption">${img.caption}</p>`;
-                        container.appendChild(div);
-                    });
-
-                    // 저장 버튼 추가
-                    actionBtn.innerHTML = `<button onclick="saveStory(${data.id})" style="padding:10px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer;">⭐ 보관함에 저장</button>`;
-                }
-            } catch (e) {
-                title.innerText = "에러가 발생했습니다.";
-                console.error(e);
-            }
-        }
-
-        // 이야기 저장
-        async function saveStory(epId) {
-            const res = await fetch(`/api/library/save/${epId}/`, { 
-                method: 'POST', 
-                headers: {'X-CSRFToken': '{{ csrf_token }}'} 
-            });
-            const json = await res.json();
-            alert(json.message);
-            // 저장 후 별도의 피드백이 필요하다면 여기에 추가
-        }
-    </script>
-=======
     <meta charset="UTF-8">
     <title>메인 페이지</title>
     <style>
@@ -260,6 +145,5 @@
     </form>
 </div>
 
->>>>>>> 0d6b3f83263c69e43d272063447f5061c2759c13
 </body>
 </html>
