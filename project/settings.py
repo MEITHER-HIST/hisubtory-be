@@ -11,14 +11,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import pymysql
 import os
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
-
-
+pymysql.version_info = (2, 2, 1, 'final', 0)
+pymysql.install_as_MySQLdb()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -33,6 +35,10 @@ ALLOWED_HOSTS = [
     "3.36.115.132",
     "localhost",
     "127.0.0.1",
+    ".amazonaws.com",
+    "10.0.0.125",
+    "10.0.0.97",
+    ".elb.amazonaws.com",
 ]
 
 
@@ -157,3 +163,11 @@ AUTH_USER_MODEL = 'accounts.User'
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+HUGGINGFACE_TOKEN = "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"
+
+LOGIN_URL = '/api/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
