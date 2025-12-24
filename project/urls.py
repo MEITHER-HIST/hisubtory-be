@@ -19,4 +19,6 @@ urlpatterns = [
     path('', include('pages.urls')),
     path('health/', health),
     path('stories/', include('stories.urls')),
+
 ]  
+ 
