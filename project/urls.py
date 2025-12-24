@@ -18,4 +18,5 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('', include('pages.urls')),
     path('health/', health),
+    path('stories/', include('stories.urls')),
 ]
