@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Episode
 from subway.models import Station
-from library.models import UserViewedEpisode, Bookmark
+from library.models import UserViewedEpisode
 from .serializers import EpisodeSerializer
+from django.utils import timezone
 
 # -----------------------------
 # 에피소드 선택 API (역 버튼 / 랜덤 버튼)
@@ -23,28 +24,21 @@ def pick_episode_view(request, station_id):
     user = request.user if request.user.is_authenticated else None
 
     station = get_object_or_404(Station, id=station_id)
-    episodes = Episode.objects.filter(station=station)
+    episodes = Episode.objects.filter(webtoon__station=station)
 
-    # -----------------------------
-    # 역 버튼 클릭: 미시청 우선
-    # -----------------------------
     if mode == 'unseen':
         if not user:
             return Response(
                 {"success": False, "message": "로그인이 필요합니다."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        # 로그인 유저만 미시청 에피 선택
         episodes = episodes.exclude(
             id__in=UserViewedEpisode.objects.filter(user=user)
             .values_list('episode_id', flat=True)
         )
 
-    # -----------------------------
-    # 선택 가능한 에피가 없으면 전체 에피로 fallback
-    # -----------------------------
     if not episodes.exists():
-        episodes = Episode.objects.filter(station=station)
+        episodes = Episode.objects.filter(webtoon__station=station)
 
     if not episodes.exists():
         return Response(
@@ -52,14 +46,8 @@ def pick_episode_view(request, station_id):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # -----------------------------
-    # 랜덤 선택
-    # -----------------------------
     episode = random.choice(list(episodes))
 
-    # -----------------------------
-    # 로그인 유저 본 기록 저장
-    # -----------------------------
     if user:
         UserViewedEpisode.objects.get_or_create(user=user, episode=episode)
 
@@ -83,22 +71,27 @@ def view_episode(request, episode_id):
 
 
 # -----------------------------
-# 에피소드 즐겨찾기/토글
+# 에피소드 저장/토글
 # -----------------------------
 @api_view(['PUT'])
-def save_episode(request, episode_id):
+def toggle_save_episode(request, episode_id):
     episode = get_object_or_404(Episode, id=episode_id)
     user = request.user
     if not user.is_authenticated:
         return Response({"success": False, "message": "Login required"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    bookmark, created = Bookmark.objects.get_or_create(user=user, episode=episode)
-    if not created:
-        # 이미 즐겨찾기 되어 있으면 제거
-        bookmark.delete()
+    uve, created = UserViewedEpisode.objects.get_or_create(user=user, episode=episode)
+
+    if uve.saved:
+        uve.saved = False
+        uve.saved_at = None
         action = "removed"
     else:
+        uve.saved = True
+        uve.saved_at = timezone.now()
         action = "added"
+
+    uve.save()
 
     serializer = EpisodeSerializer(episode)
     return Response({"success": True, "action": action, "episode": serializer.data})
