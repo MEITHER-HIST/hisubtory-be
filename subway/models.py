@@ -20,13 +20,13 @@ class Station(models.Model):
     def __str__(self):
         return self.station_name
 
-class StationLine(models.Model):
-    line = models.ForeignKey(Line, on_delete=models.CASCADE)
-    station = models.ForeignKey(Station, on_delete=models.CASCADE)
-    station_order = models.IntegerField(blank=True, null=True)
+# class StationLine(models.Model):
+#     line = models.ForeignKey(Line, on_delete=models.CASCADE)
+#     station = models.ForeignKey(Station, on_delete=models.CASCADE)
+#     station_order = models.IntegerField(blank=True, null=True)
 
-    class Meta:
-        unique_together = ('line', 'station')
+#     class Meta:
+#         unique_together = ('line', 'station')
 
-    def __str__(self):
-        return f"{self.line} - {self.station}"
+#     def __str__(self):
+#         return f"{self.line} - {self.station}"

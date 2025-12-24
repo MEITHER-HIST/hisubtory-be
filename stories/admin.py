@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Episode, Cut
+from .models import Webtoon, Episode, Cut
+
+
+@admin.register(Webtoon)
+class WebtoonAdmin(admin.ModelAdmin):
+    list_display = ("webtoon_id", "station", "title", "author", "created_at")
+    search_fields = ("title", "author")
+    list_filter = ("station",)
+
 
 # Cut 모델 Inline 등록
 class CutInline(admin.TabularInline):
@@ -8,9 +16,8 @@ class CutInline(admin.TabularInline):
     fields = ('image', 'caption', 'order')  # 입력 필드
     readonly_fields = ()
 
-# EpisodeAdmin 수정
-@admin.register(Episode)
-class EpisodeAdmin(admin.ModelAdmin):
-    list_display = ('station', 'title', 'image')
-    fields = ('station', 'title', 'image')
-    inlines = [CutInline]  # Episode 상세에서 컷 추가 가능
+@admin.register(Cut)
+class CutAdmin(admin.ModelAdmin):
+    list_display = ("cut_id", "episode", "cut_order", "created_at")
+    list_filter = ("cut_order",)
+    ordering = ("episode", "cut_order")
