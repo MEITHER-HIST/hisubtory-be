@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'stories',
     'library',
     'pages',
+    'rest_framework',
     'storages',
 ]
 MIDDLEWARE = [

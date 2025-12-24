@@ -1,10 +1,16 @@
 from rest_framework import serializers
-from .models import Episode
+from .models import Episode, Cut
+
+
+class CutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cut
+        fields = ['id', 'image', 'caption', 'order']
+
 
 class EpisodeSerializer(serializers.ModelSerializer):
-    station_name = serializers.CharField(source='station.name', read_only=True)
-    station_image = serializers.ImageField(source='station.image', read_only=True)
+    cuts = CutSerializer(many=True, read_only=True)
 
     class Meta:
         model = Episode
-        fields = ['id', 'station_name', 'station_image', 'title', 'image']
+        fields = ['id', 'title', 'station', 'cuts']
