@@ -5,7 +5,6 @@ from library.models import UserViewedEpisode, Bookmark
 from subway.models import Station
 import random
 
-# ===== 브라우저용 뷰 =====
 def episode_detail_view(request, episode_id):
     user = request.user if request.user.is_authenticated else None
     episode = get_object_or_404(Episode, id=episode_id)
@@ -59,51 +58,3 @@ def toggle_bookmark(request, episode_id):
         bookmark.delete()  # 이미 북마크 되어있으면 취소
     return redirect('episode_detail', episode_id=episode_id)
 
-
-# ===== API용 뷰 =====
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .serializers import EpisodeSerializer
-
-@api_view(['GET'])
-def station_stories_api(request, station_id):
-    station = get_object_or_404(Station, id=station_id)
-    user = request.user if request.user.is_authenticated else None
-
-    episodes = Episode.objects.filter(station=station)
-    if not episodes.exists():
-        return Response({"message": "해당 역의 스토리가 없습니다."}, status=404)
-
-    # 로그인 유저 처리
-    prev_episode = None
-    new_episode_available = False
-    not_viewed_episodes = list(episodes)
-
-    if user:
-        viewed_ids = set(UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True))
-        already_viewed = [ep for ep in episodes if ep.id in viewed_ids]
-        not_viewed_episodes = [ep for ep in episodes if ep.id not in viewed_ids]
-
-        if already_viewed:
-            prev_episode = already_viewed[-1]  # 직전에 본 에피
-        if not_viewed_episodes:
-            new_episode_available = True
-
-    # 보여줄 에피 선택
-    episode_to_show = random.choice(not_viewed_episodes) if not_viewed_episodes else random.choice(list(episodes))
-
-    # DB 기록 남기기 (로그인 유저만)
-    if user:
-        UserViewedEpisode.objects.get_or_create(user=user, episode=episode_to_show)
-        # 북마크 상태 추가
-        is_bookmarked = Bookmark.objects.filter(user=user, episode=episode_to_show).exists()
-    else:
-        is_bookmarked = False
-
-    data = {
-        "episode": EpisodeSerializer(episode_to_show).data,  # 컷 4개 포함
-        "prev_episode": EpisodeSerializer(prev_episode).data if prev_episode else None,
-        "new_episode_available": new_episode_available,
-        "is_bookmarked": is_bookmarked
-    }
-    return Response(data) 

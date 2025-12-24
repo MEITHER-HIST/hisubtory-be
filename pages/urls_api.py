@@ -1,12 +1,12 @@
 from django.urls import path
-from . import api_views
+from . import views_api
 
 urlpatterns = [
-    # 노선 관련 API
-    path('v1/lines', api_views.lines_list, name='lines_list'),
-    path('v1/lines/<str:line_id>', api_views.line_detail, name='line_detail'),
+    # 메인 페이지 데이터
+    path('v1/main', views_api.main_api_view, name='main_api'),
 
-    # 랜덤 에피소드 API
-    path('v1/stations/<int:station_id>/random_episode', api_views.random_episode_view, name='random_episode'),
+    # 마이페이지 데이터 (로그인 필요)
+    path('v1/mypage', views_api.mypage_api_view, name='mypage_api'),
 ]
+
  

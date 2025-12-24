@@ -8,31 +8,36 @@ from django.db.models.functions import Cast, Substr
 from django.http import JsonResponse
 import random
 
-# ----------------------------
-# HTML용 뷰
-# ----------------------------
 
 def main_view(request):
-    # 1️⃣ 노선 목록 (1~9호선 숫자 순, 3호선 맨 위)
+    # 1️⃣ 노선 목록
+    # - 활성 노선 먼저
+    # - 활성 노선 내에서는 호선 번호순
     lines = Line.objects.annotate(
         line_number=Cast(Substr('line_name', 1, 1), IntegerField()),
-        priority=Case(
-            When(line_name='3호선', then=0),
-            default=1,
+        is_active_calc=Case(
+            When(line_name='3호선', then=1),  # 현재 활성 노선
+            default=0,
             output_field=IntegerField()
         )
-    ).order_by('priority', 'line_number')
+    ).order_by(
+        '-is_active_calc',
+        'line_number'
+    )
 
-    # 1-1️⃣ 3호선을 제외한 나머지 이름 뒤에 (준비중) 추가
+    # 1-1️⃣ 노선 표시용 리스트
     line_list = []
     for line in lines:
+        is_active = bool(line.is_active_calc)
+
         display_name = line.line_name
-        if line.line_name != '3호선':
+        if not is_active:
             display_name += ' (준비중)'
+
         line_list.append({
             'id': line.id,
             'line_name': display_name,
-            'is_active': line.line_name == '3호선'
+            'is_active': is_active
         })
 
     # 2️⃣ 선택된 노선 (default: 3호선)
@@ -41,6 +46,7 @@ def main_view(request):
         line_int = int(line_num)
     except ValueError:
         line_int = 3
+
     line_obj = Line.objects.filter(line_name=f"{line_int}호선").first()
 
     # 3️⃣ 해당 노선의 활성 역 목록
@@ -51,13 +57,13 @@ def main_view(request):
             is_enabled=True
         ).distinct()
 
-    # 랜덤 버튼 표시 여부: 활성화된 역이 하나라도 있으면 True
+    # 랜덤 버튼 표시 여부
     show_random_button = stations.exists()
 
-    # 4️⃣ 로그인 유저 확인
+    # 4️⃣ 로그인 유저
     user = request.user if request.user.is_authenticated else None
 
-    # 5️⃣ 로그인 유저가 본 역 ID 목록
+    # 5️⃣ 유저가 본 역 ID
     viewed_station_ids = set()
     if user:
         viewed_station_ids = set(
@@ -68,12 +74,16 @@ def main_view(request):
     # 6️⃣ 에피소드 선택 함수
     def get_episode(station_id, fetch_unseen=True):
         episodes = Episode.objects.filter(station_id=station_id)
+
         if user and fetch_unseen:
             episodes = episodes.exclude(
-                id__in=UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True)
+                id__in=UserViewedEpisode.objects.filter(user=user)
+                .values_list('episode_id', flat=True)
             )
+
         if not episodes.exists() and fetch_unseen:
             episodes = Episode.objects.filter(station_id=station_id)
+
         if episodes.exists():
             ep = random.choice(list(episodes))
             if user:
@@ -81,26 +91,27 @@ def main_view(request):
             return ep
         return None
 
-    # 7️⃣ 클릭한 역 처리
+    # 7️⃣ 역 클릭 처리
     clicked_station_id = request.GET.get('clicked_station')
     if clicked_station_id:
         try:
             clicked_station_id = int(clicked_station_id)
             episode_id_for_redirect = None
+
             if user:
-                # 로그인 O
-                viewed_episodes = UserViewedEpisode.objects.filter(user=user, episode__station_id=clicked_station_id)
+                viewed_episodes = UserViewedEpisode.objects.filter(
+                    user=user,
+                    episode__station_id=clicked_station_id
+                )
+
                 if viewed_episodes.exists():
-                    # 초록색 역: 마지막 본 에피
                     last_episode = viewed_episodes.latest('viewed_at').episode
                     episode_id_for_redirect = last_episode.id
                 else:
-                    # 회색 역: 새로운 에피
                     ep = get_episode(clicked_station_id)
                     if ep:
                         episode_id_for_redirect = ep.id
             else:
-                # 비회원: 첫 에피
                 ep = get_episode(clicked_station_id)
                 if ep:
                     episode_id_for_redirect = ep.id
@@ -111,19 +122,23 @@ def main_view(request):
         except ValueError:
             pass
 
-    # 8️⃣ 랜덤 스토리 버튼 처리
+    # 8️⃣ 랜덤 스토리 버튼
     if request.GET.get('random') == '1' and stations.exists():
         candidate_stations = list(stations)
+
         if user:
-            candidate_stations = [s for s in stations if s.id not in viewed_station_ids]
+            candidate_stations = [
+                s for s in stations if s.id not in viewed_station_ids
+            ]
             if not candidate_stations:
                 candidate_stations = list(stations)
+
         random_station = random.choice(candidate_stations)
         ep = get_episode(random_station.id)
         if ep:
             return redirect('episode_detail', episode_id=ep.id)
 
-    # 9️⃣ 역 상태 계산 (마커 색상)
+    # 9️⃣ 역 상태 (마커 색상)
     station_list = []
     for s in stations:
         station_list.append({
@@ -148,21 +163,21 @@ def main_view(request):
 def mypage_view(request):
     user = request.user
 
-    # 최근 본 이야기
     recent_views = UserViewedEpisode.objects.filter(
         user=user
-    ).select_related('episode', 'episode__station').order_by('-viewed_at')[:10]
+    ).select_related(
+        'episode', 'episode__station'
+    ).order_by('-viewed_at')[:10]
 
-    # 북마크한 에피소드
     bookmarked_episodes = Bookmark.objects.filter(
         user=user
-    ).select_related('episode', 'episode__station').order_by('-created_at')
+    ).select_related(
+        'episode', 'episode__station'
+    ).order_by('-created_at')
 
-    # 에피소드 수 계산
     recent_count = recent_views.count()
     bookmark_count = bookmarked_episodes.count()
 
-    # 최근 본 역 ID 목록 (기존 용도 유지)
     viewed_station_ids = set(
         recent_views.values_list('episode__station_id', flat=True)
     )
@@ -178,117 +193,3 @@ def mypage_view(request):
         'viewed_station_ids': viewed_station_ids,
     }
     return render(request, 'pages/mypage.html', context)
-
-
-# ----------------------------
-# API용 뷰
-# ----------------------------
-
-def main_api_view(request):
-    # 1️⃣ ~ 10️⃣ HTML용 main_view와 거의 동일하지만 JsonResponse로 반환
-    lines = Line.objects.annotate(
-        line_number=Cast(Substr('line_name', 1, 1), IntegerField()),
-        priority=Case(
-            When(line_name='3호선', then=0),
-            default=1,
-            output_field=IntegerField()
-        )
-    ).order_by('priority', 'line_number')
-
-    line_list = []
-    for line in lines:
-        display_name = line.line_name
-        if line.line_name != '3호선':
-            display_name += ' (준비중)'
-        line_list.append({
-            'id': line.id,
-            'line_name': display_name,
-            'is_active': line.line_name == '3호선'
-        })
-
-    line_num = request.GET.get('line', '3')
-    try:
-        line_int = int(line_num)
-    except ValueError:
-        line_int = 3
-    line_obj = Line.objects.filter(line_name=f"{line_int}호선").first()
-
-    stations = Station.objects.none()
-    if line_obj:
-        stations = Station.objects.filter(
-            stationline__line=line_obj,
-            is_enabled=True
-        ).distinct()
-
-    show_random_button = stations.exists()
-
-    user = request.user if request.user.is_authenticated else None
-
-    viewed_station_ids = set()
-    if user:
-        viewed_station_ids = set(
-            UserViewedEpisode.objects.filter(user=user)
-            .values_list('episode__station_id', flat=True)
-        )
-
-    station_list = []
-    for s in stations:
-        station_list.append({
-            'id': s.id,
-            'name': s.station_name,
-            'clickable': bool(user),
-            'color': 'green' if user and s.id in viewed_station_ids else 'gray'
-        })
-
-    data = {
-        'lines': line_list,
-        'selected_line': line_obj.line_name if line_obj else None,
-        'stations': station_list,
-        'show_random_button': show_random_button,
-    }
-    return JsonResponse(data)
-
-
-@login_required
-def mypage_api_view(request):
-    user = request.user
-
-    recent_views = UserViewedEpisode.objects.filter(
-        user=user
-    ).select_related('episode', 'episode__station').order_by('-viewed_at')[:10]
-
-    bookmarked_episodes = Bookmark.objects.filter(
-        user=user
-    ).select_related('episode', 'episode__station').order_by('-created_at')
-
-    recent_count = recent_views.count()
-    bookmark_count = bookmarked_episodes.count()
-
-    viewed_station_ids = set(
-        recent_views.values_list('episode__station_id', flat=True)
-    )
-    viewed_stations = Station.objects.filter(id__in=viewed_station_ids)
-
-    data = {
-        'user': {
-            'id': user.id,
-            'username': user.username
-        },
-        'recent_views': [
-            {
-                'station': v.episode.station.station_name,
-                'episode': v.episode.title,
-                'viewed_at': v.viewed_at
-            } for v in recent_views
-        ],
-        'bookmarked_episodes': [
-            {
-                'station': b.episode.station.station_name,
-                'episode': b.episode.title,
-                'saved_at': b.created_at
-            } for b in bookmarked_episodes
-        ],
-        'recent_count': recent_count,
-        'bookmark_count': bookmark_count,
-    }
-    return JsonResponse(data)
