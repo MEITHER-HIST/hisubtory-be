@@ -14,12 +14,6 @@ from django.utils import timezone
 # -----------------------------
 @api_view(['GET'])
 def pick_episode_view(request, station_id):
-    """
-    station_id 기준 에피소드 선택
-    ?mode=auto/unseen
-    - mode=unseen → 역 버튼 클릭, 로그인 유저만 가능
-    - mode=auto   → 랜덤 버튼 클릭, 로그인/비로그인 모두 가능
-    """
     mode = request.GET.get('mode', 'auto')
     user = request.user if request.user.is_authenticated else None
 
@@ -28,23 +22,16 @@ def pick_episode_view(request, station_id):
 
     if mode == 'unseen':
         if not user:
-            return Response(
-                {"success": False, "message": "로그인이 필요합니다."},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"success": False, "message": "로그인이 필요합니다."}, status=status.HTTP_401_UNAUTHORIZED)
         episodes = episodes.exclude(
-            id__in=UserViewedEpisode.objects.filter(user=user)
-            .values_list('episode_id', flat=True)
+            id__in=UserViewedEpisode.objects.filter(user=user).values_list('episode_id', flat=True)
         )
 
     if not episodes.exists():
         episodes = Episode.objects.filter(webtoon__station=station)
 
     if not episodes.exists():
-        return Response(
-            {"success": False, "message": "No episodes available"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"success": False, "message": "No episodes available"}, status=status.HTTP_404_NOT_FOUND)
 
     episode = random.choice(list(episodes))
 

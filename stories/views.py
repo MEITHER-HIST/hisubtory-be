@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Episode, Cut
+from stories.models import Episode, Cut
 from library.models import UserViewedEpisode
 from django.utils import timezone
 import random
@@ -24,14 +24,12 @@ def episode_detail_view(request, episode_id):
         if uve and uve.saved:
             is_saved = True
 
-    # 새 에피소드 버튼 처리 (이미 본 적 있는지)
+    # 새 에피 버튼 처리 (이미 본 적 있는지)
     new_episode_button = False
     if user:
         viewed_episodes = UserViewedEpisode.objects.filter(
             user=user, episode__webtoon__station=station
         )
-        if viewed_episodes.exists():
-            new_episode_button = True
 
         # GET param으로 다음 에피 선택
         if request.GET.get('next') == 'true':
@@ -40,18 +38,29 @@ def episode_detail_view(request, episode_id):
             )
             if unseen_episodes.exists():
                 episode = random.choice(list(unseen_episodes))
-                UserViewedEpisode.objects.get_or_create(user=user, episode=episode)
                 cuts = episode.cuts.all()[:4]  # 컷 갱신
-            new_episode_button = False
+
+        new_episode_button = viewed_episodes.exists()
+
+    # ==========================
+    # UserViewedEpisode 안전하게 생성
+    # ==========================
+    if user and episode.webtoon and episode.webtoon.station:
+        UserViewedEpisode.objects.get_or_create(
+            user=user,
+            episode=episode,
+            station=episode.webtoon.station
+        )
 
     context = {
         'episode': episode,
         'cuts': cuts,
         'other_episodes': other_episodes,
         'new_episode_button': new_episode_button,
-        'is_saved': is_saved,  # 수정
+        'is_saved': is_saved,
     }
     return render(request, 'stories/episode_detail.html', context)
+
 
 
 # ===== 저장 토글 뷰 =====

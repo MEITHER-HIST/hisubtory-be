@@ -32,13 +32,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "ec2-3-36-115-132.ap-northeast-2.compute.amazonaws.com",
-    ".elb.amazonaws.com",
+    "hisub-alb-1329951961.ap-northeast-2.elb.amazonaws.com",
+    "hisub-nlb-240290227cb110fd.elb.ap-northeast-2.amazonaws.com",
     "3.36.115.132",
     "localhost",
     "127.0.0.1",
     ".amazonaws.com",
     "10.0.0.125",
     "10.0.0.97",
+    "10.0.0.216",
     ".elb.amazonaws.com",
 ]
 
@@ -175,6 +177,8 @@ LOGIN_URL = '/api/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "hisub-s3-bucket")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-northeast-2")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 
 # (선택) CloudFront 붙일 때만 사용. 없으면 비워두기
 AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "")
@@ -182,21 +186,24 @@ AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "")
 # 업로드 파일을 public로 열어둘 거면 False (URL에 서명 안 붙음)
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = None  # django-storages 권장
+AWS_S3_FILE_OVERWRITE = False
 
 MEDIA_LOCATION = "media"
 
 STORAGES = {
-    # ✅ MEDIA(업로드)만 S3로
+    # MEDIA(업로드)만 S3로
     "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
             "bucket_name": AWS_STORAGE_BUCKET_NAME,
             "region_name": AWS_S3_REGION_NAME,
+            "access_key": AWS_ACCESS_KEY_ID,
+            "secret_key": AWS_SECRET_ACCESS_KEY,
             "location": MEDIA_LOCATION,
         },
     },
 
-    # ✅ STATIC은 일단 로컬 유지(원하면 나중에 S3로도 가능)
+    # STATIC은 일단 로컬 유지(원하면 나중에 S3로도 가능)
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },

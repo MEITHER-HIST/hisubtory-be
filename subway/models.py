@@ -29,4 +29,4 @@ class StationLine(models.Model):
         unique_together = ('line', 'station')
 
     def __str__(self):
-        return f"{self.line} - {self.station}"
+        return f"{self.line} - {self.station}" 
