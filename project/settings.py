@@ -10,24 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+import pymysql
 from pathlib import Path
 from dotenv import load_dotenv
-import pymysql
-import os
-from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# 1. 경로 및 환경 변수 설정
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+# 2. MySQL 드라이버 설정 (PyMySQL을 MySQLdb처럼 사용)
 pymysql.version_info = (2, 2, 1, 'final', 0)
 pymysql.install_as_MySQLdb()
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ti-prtjm(d_p7ve!r(g&4&(=+*_vn*x+*3z^ge567i72tr-5)1'
-
-# SECURITY WARNING: don't run with debug turned on in production!
+# 3. 보안 설정
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-ti-prtjm(d_p7ve!r(g&4&(=+*_vn*x+*3z^ge567i72tr-5)1')
 DEBUG = True
 
 ALLOWED_HOSTS = [
@@ -44,9 +41,7 @@ ALLOWED_HOSTS = [
     ".elb.amazonaws.com",
 ]
 
-
-# Application definition
-
+# 4. 애플리케이션 정의
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,14 +49,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # 생성한 앱들
     'accounts',
     'subway',   
     'stories',
     'library',
     'pages',
+    
+    # 서드파티 라이브러리
     'rest_framework',
     'storages',
 ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -77,10 +77,11 @@ ROOT_URLCONF = 'project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'], # HTML 파일을 찾을 수 있도록 경로 수정
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -91,11 +92,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# 5. Database 설정
 USE_SQLITE = os.getenv("USE_SQLITE", "1") == "1"
+
 if USE_SQLITE:
     DATABASES = {
         "default": {
@@ -109,89 +108,56 @@ else:
             "ENGINE": "django.db.backends.mysql",
             "NAME": os.getenv("DB_NAME", "hisubtory_db"),
             "USER": os.getenv("DB_USER", "admin"),
-            "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", ""),
+            "PASSWORD": os.getenv("DB_PASSWORD", "hisadmin"),
+            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "3306"),
             "OPTIONS": {
+                "charset": "utf8mb4",
                 "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"
             },
         }
     }
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+# 6. 인증 및 권한 설정
+AUTH_USER_MODEL = 'accounts.User'
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# 7. 국제화 및 시간 설정
 LANGUAGE_CODE = 'ko-kr'
-
 TIME_ZONE = 'Asia/Seoul'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# 8. 정적 및 미디어 파일 설정 (로컬용 기본값)
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'accounts.User'
-
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_SSL_REDIRECT = False
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-HUGGINGFACE_TOKEN = "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"
-
-LOGIN_URL = '/api/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
-AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "hisub-s3-bucket")
-AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-northeast-2")
+# 9. AWS S3 설정
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
-
-# (선택) CloudFront 붙일 때만 사용. 없으면 비워두기
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "hisub-s3-bucket")
+AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-northeast-2")
 AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "")
 
-# 업로드 파일을 public로 열어둘 거면 False (URL에 서명 안 붙음)
 AWS_QUERYSTRING_AUTH = False
-AWS_DEFAULT_ACL = None  # django-storages 권장
+AWS_DEFAULT_ACL = None
 AWS_S3_FILE_OVERWRITE = False
 
 MEDIA_LOCATION = "media"
 
+# 10. 스토리지 설정 (django-storages 4.2+ 스타일)
 STORAGES = {
-    # MEDIA(업로드)만 S3로
+    # 미디어 파일은 S3에 저장
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
@@ -202,15 +168,22 @@ STORAGES = {
             "location": MEDIA_LOCATION,
         },
     },
-
-    # STATIC은 일단 로컬 유지(원하면 나중에 S3로도 가능)
+    # 정적 파일은 로컬 서버에 저장 (원할 경우 S3로 변경 가능)
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
-# MEDIA_URL
+# S3 도메인에 따른 MEDIA_URL 설정
 if AWS_S3_CUSTOM_DOMAIN:
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/"
 else:
     MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{MEDIA_LOCATION}/"
+
+# 11. 로그인 관련 URL
+LOGIN_URL = '/account/login/'        # 아까 수정한 경로에 맞춤
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/account/login/'
+
+# 12. 외부 API 토큰
+HF_TOKEN = os.getenv("HF_TOKEN")
