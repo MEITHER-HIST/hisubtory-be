@@ -53,7 +53,6 @@ def main_view(request):
     stations = Station.objects.none()
     if line_obj:
         stations = Station.objects.filter(
-            stationline__line=line_obj,
             is_enabled=True
         ).distinct()
 
