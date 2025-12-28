@@ -15,6 +15,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            "ALTER TABLE stories_cut DROP FOREIGN KEY stories_cut_episode_id_56c9dfb4_fk_stories_episode_id;",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.CreateModel(
             name='Webtoon',
             fields=[

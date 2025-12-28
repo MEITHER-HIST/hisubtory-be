@@ -1,3 +1,4 @@
+# project/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -9,16 +10,19 @@ def health(request):
     return HttpResponse("ok", content_type="text/plain")
 
 urlpatterns = [
-    path("health/", views.health),
+    # health
+    path("health/", health),
 
     # admin
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
 
-    # HTML
-    path('accounts/', include('accounts.urls')),
-    path('', include('pages.urls')),
-    path('health/', health),
-    path('stories/', include('stories.urls')),
-] 
+    # --- API (React가 붙는 경로) ---
+    path("api/accounts/", include("accounts.urls_api")),
+    # path("api/stories/", include("stories.urls_api")),  # 있으면 추가
 
+    # --- HTML (Django 템플릿 쓰는 기존 화면) ---
+    path("accounts/", include("accounts.urls")),
+    path("stories/", include("stories.urls")),
+    path("", include("pages.urls")),
+]
 
