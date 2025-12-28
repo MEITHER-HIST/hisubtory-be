@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('stories', '0001_initial'),
+        ('stories', '0003_webtoon_alter_cut_options_remove_cut_id_and_more'),
+        ('auth', '0012_alter_user_first_name_max_length'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

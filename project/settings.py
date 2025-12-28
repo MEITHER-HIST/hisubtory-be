@@ -214,3 +214,7 @@ if AWS_S3_CUSTOM_DOMAIN:
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/"
 else:
     MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{MEDIA_LOCATION}/"
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
