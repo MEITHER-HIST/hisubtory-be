@@ -62,11 +62,10 @@ class Cut(models.Model):
     cut_id = models.BigAutoField(primary_key=True)
     episode = models.ForeignKey(Episode, on_delete=models.CASCADE, related_name="cuts")
     cut_order = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(4)],
-        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(4)]
     )  # 1~4
     image = models.ImageField(upload_to=cut_upload_to)
-    caption = models.TextField()
+    caption = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
