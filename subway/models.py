@@ -1,3 +1,4 @@
+# subway/models.py
 from django.db import models
 
 class Line(models.Model):

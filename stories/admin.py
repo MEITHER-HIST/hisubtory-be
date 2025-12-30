@@ -8,6 +8,13 @@ class WebtoonAdmin(admin.ModelAdmin):
     search_fields = ("title", "author")
     list_filter = ("station",)
 
+@admin.register(Episode)
+class EpisodeAdmin(admin.ModelAdmin):
+    list_display = ("episode_id", "webtoon", "episode_num", "is_published", "published_at", "created_at")
+    list_filter = ("is_published", "webtoon")
+    search_fields = ("subtitle", "history_summary", "source_url")
+    ordering = ("-created_at",)
+
 
 # Cut 모델 Inline 등록
 class CutInline(admin.TabularInline):
