@@ -6,7 +6,7 @@ import random
 import json
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.http import JsonResponse
 from subway.models import Line, Station
 from stories.models import Episode
