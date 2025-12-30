@@ -64,36 +64,31 @@ def main_view(request):
     user = request.user if request.user.is_authenticated else None
 
     # 6️⃣ 유저가 본 역 ID 가져오기
-    viewed_station_ids = set()
-    if user:
-        viewed_station_ids = set(
-            UserViewedEpisode.objects.filter(user=user)
-            .values_list('episode__station_id', flat=True)
-        )
+    viewed_station_ids = set(
+        UserViewedEpisode.objects.filter(user=user)
+        .values_list("episode__webtoon__station_id", flat=True)
+    )
 
     # 7️⃣ 에피소드 선택 함수 정의
-    def get_episode(station_id, fetch_unseen=True):
-        # 해당 역의 에피소드 가져오기
-        episodes = Episode.objects.filter(station_id=station_id)
+    # pages/views.py
 
-        # 로그인 유저라면 아직 안 본 에피소드로 필터링
-        if user and fetch_unseen:
-            episodes = episodes.exclude(
-                id__in=UserViewedEpisode.objects.filter(user=user)
-                .values_list('episode_id', flat=True)
-            )
+def get_episode(station_id, fetch_unseen=True):
+    episodes = Episode.objects.filter(webtoon__station_id=station_id)
 
-        # 안 본 에피가 없으면 전체 에피소드 다시 가져오기
-        if not episodes.exists() and fetch_unseen:
-            episodes = Episode.objects.filter(station_id=station_id)
+    if user and fetch_unseen:
+        seen_ids = UserViewedEpisode.objects.filter(user=user).values_list("episode_id", flat=True)
+        episodes = episodes.exclude(pk__in=seen_ids)
 
-        # 에피소드 선택 후, 로그인 유저라면 본 기록 생성
-        if episodes.exists():
-            ep = random.choice(list(episodes))
-            if user:
-                UserViewedEpisode.objects.get_or_create(user=user, episode=ep)
-            return ep
-        return None
+    if not episodes.exists() and fetch_unseen:
+        episodes = Episode.objects.filter(webtoon__station_id=station_id)
+
+    if episodes.exists():
+        ep = random.choice(list(episodes))
+        if user:
+            UserViewedEpisode.objects.get_or_create(user=user, episode=ep)
+        return ep
+    return None
+
 
     # 8️⃣ 역 클릭 처리 (GET 파라미터 ?clicked_station=ID)
     clicked_station_id = request.GET.get('clicked_station')
