@@ -16,8 +16,27 @@ def signup_api_view(request):
     form = SignupForm(request.POST)
     if form.is_valid():
         user = form.save()
-        return JsonResponse({"success": True, "id": user.id, "username": user.username})
+
+        # 회원가입 직후 자동 로그인(세션 생성)
+        pw = getattr(form, "cleaned_data", {}).get("password1") or request.POST.get("password")
+        authed = None
+        if pw:
+            authed = authenticate(request, username=user.username, password=pw)
+
+        if authed:
+            login(request, authed)
+        else:
+            # authenticate가 실패해도 최소 세션 로그인은 되게(모델백엔드 고정)
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+
+        return JsonResponse({
+            "success": True,
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        })
     return JsonResponse({"success": False, "errors": form.errors}, status=400)
+
 
 @require_POST
 def login_api_view(request):
