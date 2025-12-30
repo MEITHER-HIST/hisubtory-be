@@ -1,3 +1,4 @@
+# stories/models.py
 import os, uuid
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator

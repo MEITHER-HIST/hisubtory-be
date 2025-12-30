@@ -1,3 +1,4 @@
+# pages/views.py
 from django.shortcuts import render, redirect
 from subway.models import Station, Line
 from stories.models import Episode
