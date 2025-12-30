@@ -19,10 +19,13 @@ urlpatterns = [
     # --- API (React가 붙는 경로) ---
     path("api/accounts/", include("accounts.urls_api")),
     path("api/pages/", include("pages.urls_api")),
+    path('api/stories/', include('stories.urls')),
 
     # --- HTML (Django 템플릿 쓰는 기존 화면) ---
     path("accounts/", include("accounts.urls")),
     path("stories/", include("stories.urls")),
     path("", include("pages.urls")),
+    path('library/', include('library.urls')),
+    
 ]
 
