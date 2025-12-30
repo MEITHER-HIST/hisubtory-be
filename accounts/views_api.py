@@ -1,8 +1,7 @@
 # accounts/views_api.py
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout, get_user_model
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import SignupForm
 
@@ -28,7 +27,6 @@ def login_api_view(request):
     if not identifier or not password:
         return JsonResponse({"success": False, "message": "email/password required"}, status=400)
 
-    # email이면 username으로 바꿔서 authenticate
     if "@" in identifier:
         u = User.objects.filter(email__iexact=identifier).first()
         if not u:
@@ -42,13 +40,18 @@ def login_api_view(request):
     login(request, user)
     return JsonResponse({"success": True, "username": user.username})
 
+# login_required 제거 + 미로그인 401 JSON
 @require_POST
-@login_required
 def logout_api_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "message": "not_authenticated"}, status=401)
     logout(request)
     return JsonResponse({"success": True})
 
-@login_required
+# login_required 제거 + 미로그인 401 JSON (가장 중요)
+@require_GET
 def me_api_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"success": False, "message": "not_authenticated"}, status=401)
     user = request.user
     return JsonResponse({"success": True, "id": user.id, "username": user.username, "email": user.email})
