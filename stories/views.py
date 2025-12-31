@@ -1,94 +1,89 @@
+import random
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Episode, Cut
+from django.http import Http404  # <--- 이것도 get_object에서 쓰이니 확인!
+
+from rest_framework import generics
+from rest_framework.response import Response  # <--- 이 줄이 핵심입니다!
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import AllowAny
+
+from .models import Webtoon, Episode, Cut
+from .serializers import EpisodeSerializer, CutSerializer
 from library.models import UserViewedEpisode, Bookmark
 from subway.models import Station
-import random
 
+# ===== [HTML] 에피소드 상세 뷰 (기존 템플릿 렌더링용) =====
 def episode_detail_view(request, episode_id):
     user = request.user if request.user.is_authenticated else None
-    episode = get_object_or_404(Episode, id=episode_id)
+    # DB 컬럼명에 맞춰 id 대신 episode_id 사용
+    episode = get_object_or_404(Episode, episode_id=episode_id)
 
-    # 컷 4개 가져오기
-    cuts = episode.cuts.all()[:4]
+    # 역방향 참조 (related_name이 cuts라고 가정)
+    cuts = episode.cuts.all().order_by('cut_order')[:4]
 
-    # 다른 에피소드 확인 (같은 역)
-    all_episodes = Episode.objects.filter(station=episode.station)
-    other_episodes = all_episodes.exclude(id=episode.id)
+    # 같은 웹툰(역)에 속한 다른 에피소드들
+    other_episodes = Episode.objects.filter(webtoon=episode.webtoon).exclude(episode_id=episode.episode_id)
 
-    # 북마크 상태
     is_bookmarked = False
     if user:
         is_bookmarked = Bookmark.objects.filter(user=user, episode=episode).exists()
-
-    # 새 에피소드 버튼 처리 (이미 본 적 있는지)
-    new_episode_button = False
-    if user:
-        viewed_episodes = UserViewedEpisode.objects.filter(user=user, episode__station_id=episode.station.id)
-        if viewed_episodes.exists():
-            new_episode_button = True
-
-        # GET param으로 다음 에피 선택
-        if request.GET.get('next') == 'true':
-            unseen_episodes = Episode.objects.filter(station=episode.station).exclude(
-                id__in=viewed_episodes.values_list('episode_id', flat=True)
-            )
-            if unseen_episodes.exists():
-                episode = random.choice(list(unseen_episodes))
-                UserViewedEpisode.objects.get_or_create(user=user, episode=episode)
-                cuts = episode.cuts.all()[:4]  # 컷 갱신
-            new_episode_button = False
 
     context = {
         'episode': episode,
         'cuts': cuts,
         'other_episodes': other_episodes,
-        'new_episode_button': new_episode_button,
         'is_bookmarked': is_bookmarked,
     }
     return render(request, 'stories/episode_detail.html', context)
 
 
-# ===== 북마크 토글 뷰 =====
-@login_required
-def toggle_bookmark(request, episode_id):
-    episode = get_object_or_404(Episode, id=episode_id)
-    bookmark, created = Bookmark.objects.get_or_create(user=request.user, episode=episode)
-    if not created:
-        bookmark.delete()  # 이미 북마크 되어있으면 취소
-    return redirect('episode_detail', episode_id=episode_id)
+# ===== [API] 에피소드 상세 뷰 (프론트엔드 리액트/모바일용) =====
+class EpisodeDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = EpisodeSerializer
+    permission_classes = [AllowAny]
 
-# from rest_framework.decorators import api_view
-# from rest_framework.response import Response
-# from django.shortcuts import get_object_or_404
-# from .models import Episode
-# from .serializers import EpisodeSerializer
-# from subway.models import Station
-# import random
+    def get(self, request, *args, **kwargs):
+        episode_id = self.request.query_params.get('episode_id')
+        if not episode_id:
+            return Response({"success": False, "message": "episode_id가 없습니다."}, status=400)
 
-# @api_view(['GET'])
-# def station_stories(request, station_id):
-#     station = get_object_or_404(Station, id=station_id)
-#     episodes = Episode.objects.filter(station=station)
+        # DB에서 에피소드 찾기
+        episode = get_object_or_404(Episode, episode_id=episode_id)
+        serializer = self.get_serializer(episode)
+        
+        # 프론트엔드가 기대하는 { success, episode, cuts } 구조로 반환
+        return Response({
+            "success": True,
+            "episode": {
+                "id": serializer.data['episode_id'],
+                "episode_num": serializer.data['episode_num'],
+                "episode_title": serializer.data['subtitle'] or f"{serializer.data['episode_num']}화",
+                "station_name": "대화", # 임시값, 필요시 serializer에서 webtoon.station 정보 참조
+                "webtoon_id": serializer.data['webtoon'],
+            },
+            "cuts": serializer.data['cuts'] # Serializer가 이미 가져온 cuts 리스트
+        })
 
-#     if episodes.exists():
-#         episode = random.choice(episodes)
-#         serializer = EpisodeSerializer(episode)
-#         return Response(serializer.data)
-#     else:
-#         return Response({"message": "해당 역의 스토리가 없습니다."}, status=404)
 
-from rest_framework import generics
-from rest_framework.parsers import MultiPartParser, FormParser
-from .models import Cut
-from .serializers import CutSerializer
-
+# ===== [API] 에피소드별 컷 리스트/생성 뷰 =====
 class EpisodeCutListCreateView(generics.ListCreateAPIView):
     serializer_class = CutSerializer
     parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
+        # URL 경로의 <int:episode_id>를 통해 필터링
         return Cut.objects.filter(episode_id=self.kwargs["episode_id"]).order_by("cut_order")
 
     def perform_create(self, serializer):
         serializer.save(episode_id=self.kwargs["episode_id"])
+
+
+# ===== [기능] 북마크 토글 =====
+@login_required
+def toggle_bookmark(request, episode_id):
+    episode = get_object_or_404(Episode, episode_id=episode_id)
+    bookmark, created = Bookmark.objects.get_or_create(user=request.user, episode=episode)
+    if not created:
+        bookmark.delete()
+    return redirect('episode_detail', episode_id=episode_id)
