@@ -7,30 +7,26 @@ from accounts.views import UnsafeSessionAuthentication # 아까 만든 클래스
 from rest_framework.authentication import SessionAuthentication
 
 class UnsafeSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        return
+    def enforce_csrf(self, request): return
 
 @api_view(['GET'])
 @authentication_classes([UnsafeSessionAuthentication])
 @permission_classes([IsAuthenticated])
 def get_user_history_api(request):
     user = request.user
-    
-    # 1. 시청 기록 쿼리
+    # select_related를 명세 계층에 맞게 수정
     viewed_qs = UserViewedEpisode.objects.filter(user=user).select_related(
         'episode__webtoon__station'
     ).order_by('-viewed_at')[:10]
     
-    # 2. 북마크 쿼리
     bookmark_qs = Bookmark.objects.filter(user=user).select_related(
         'episode__webtoon__station'
     ).order_by('-created_at')
 
-    # 데이터 가공 (이전과 동일)
     recent_data = [{
         "id": str(v.episode.episode_id),
         "title": v.episode.webtoon.title,
-        "stationId": v.episode.webtoon.station.name,
+        "stationName": v.episode.webtoon.station.station_name, # station_name으로 수정
         "imageUrl": v.episode.webtoon.thumbnail.url if v.episode.webtoon.thumbnail else "",
         "content": v.episode.subtitle
     } for v in viewed_qs]
@@ -38,7 +34,7 @@ def get_user_history_api(request):
     saved_data = [{
         "id": str(b.episode.episode_id),
         "title": b.episode.webtoon.title,
-        # ... 필요한 필드들
+        "content": b.episode.subtitle
     } for b in bookmark_qs]
 
     return Response({"recent": recent_data, "saved": saved_data})
