@@ -14,6 +14,7 @@ import os
 import pymysql
 from pathlib import Path
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -219,7 +220,9 @@ else:
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
 
 # CORS 및 CSRF 설정 (하나로 통합)
@@ -228,13 +231,20 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-csrftoken",
 ]
 
 # 세션 쿠키 설정 (브라우저가 쿠키를 잘 구울 수 있게 도와줌)
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.AllowAny",
+    ),
+}

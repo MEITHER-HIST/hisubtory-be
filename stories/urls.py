@@ -19,6 +19,7 @@ urlpatterns = [
 
     # 4. 북마크 토글 기능 (팀원 추가 기능 - 나중에 API로 연동 가능)
     path('episode/<int:episode_id>/bookmark/', toggle_bookmark, name='toggle_bookmark'),
+    path('bookmark/<int:episode_id>/', views.toggle_bookmark_api, name='toggle_bookmark_api'),
 
     # 5. 기타 내부 API 연결 (우리가 설정한 구조 유지)
     path('v1/lines/', include('pages.urls_api')),
