@@ -10,10 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
-from dotenv import load_dotenv
-import pymysql
 import os
+import pymysql
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,6 +41,7 @@ ALLOWED_HOSTS = [
     "10.0.0.97",
     "10.0.0.216",
     ".elb.amazonaws.com",
+    'ServerA'
 ]
 
 
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'corsheaders',
     'subway',   
     'stories',
     'library',
@@ -63,6 +64,7 @@ INSTALLED_APPS = [
     'storages',
 ]
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -101,16 +103,21 @@ def must(name: str) -> str:
         raise RuntimeError(f"Missing env: {name}")
     return v
 
+
 DATABASES = {
-  "default": {
-    "ENGINE": "django.db.backends.mysql",
-    "NAME": must("DB_NAME"),
-    "USER": must("DB_USER"),
-    "PASSWORD": must("DB_PASSWORD"),
-    "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-    "PORT": os.getenv("DB_PORT", "3306"),
-    "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES'"},
-  }
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "hisubtory_db",
+        "USER": os.getenv("DB_USER", "admin"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "hisadmin"),
+        "HOST": os.getenv("DB_HOST", "hisub-db.chmwc60iizys.ap-northeast-2.rds.amazonaws.com"),
+        "PORT": os.getenv("DB_PORT", "3306"),
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "charset": "utf8mb4",
+        },
+        "CONN_MAX_AGE": 0,  # 불안정한 연결을 위해 0으로 설정
+    }
 }
 
 # Password validation
@@ -214,3 +221,20 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8000",
 ]
+
+# CORS 및 CSRF 설정 (하나로 통합)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# 세션 쿠키 설정 (브라우저가 쿠키를 잘 구울 수 있게 도와줌)
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'

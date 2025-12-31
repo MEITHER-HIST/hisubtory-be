@@ -22,11 +22,14 @@ urlpatterns = [
     path("api/pages/v1/episode/detail/", EpisodeDetailAPIView.as_view(), name="episode_detail_api"),
     path("api/accounts/", include("accounts.urls_api")),
     path("api/pages/", include("pages.urls_api")),
+    path('api/stories/', include('stories.urls')),
 
     # 3. HTML & Legacy URLs
     path("accounts/", include("accounts.urls")),
     path("stories/", include("stories.urls")),
     path("", include("pages.urls")),
+    path('library/', include('library.urls')),
+    
 ]
 
 if settings.DEBUG:

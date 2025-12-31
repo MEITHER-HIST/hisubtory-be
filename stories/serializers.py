@@ -5,6 +5,7 @@ from botocore.client import Config
 from .models import Webtoon, Episode, Cut
 
 class CutSerializer(serializers.ModelSerializer):
+    # DB에 저장된 이미지 경로를 S3 보안 URL로 변환하기 위한 필드
     image_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -30,7 +31,7 @@ class CutSerializer(serializers.ModelSerializer):
         if not obj.image:
             return None
 
-        # S3 클라이언트 설정 (Presigned URL 생성용)
+        # S3 클라이언트 설정 (우리가 구현한 보안 URL 생성 로직 유지)
         try:
             s3 = boto3.client(
                 "s3",
@@ -48,12 +49,11 @@ class CutSerializer(serializers.ModelSerializer):
                 ExpiresIn=getattr(settings, "AWS_PRESIGN_EXPIRES", 600),
             )
         except Exception:
-            # S3 설정이 미비할 경우 기본 url 반환 시도
+            # S3 설정 미비 시 대체 경로 반환
             return obj.image.url if hasattr(obj.image, 'url') else None
 
 class EpisodeSerializer(serializers.ModelSerializer):
-    # 역방향 참조: Episode에 연결된 Cut들을 모두 가져옴
-    # models.py의 Cut 모델 외래키에 related_name="cuts"가 설정되어 있어야 합니다.
+    # 에피소드에 연결된 컷들을 가져옴
     cuts = CutSerializer(many=True, read_only=True)
 
     class Meta:
@@ -65,10 +65,11 @@ class EpisodeSerializer(serializers.ModelSerializer):
             "cuts"
         ]
 
+# 팀원 코드에서 'StorySerializer'라는 이름을 사용할 경우를 대비해 별칭 설정
+StorySerializer = EpisodeSerializer
+
 class WebtoonSerializer(serializers.ModelSerializer):
     thumbnail_url = serializers.SerializerMethodField()
-    # 에피소드 목록도 함께 보고 싶다면 아래 주석 해제
-    # episodes = EpisodeSerializer(many=True, read_only=True)
 
     class Meta:
         model = Webtoon
@@ -79,7 +80,7 @@ class WebtoonSerializer(serializers.ModelSerializer):
         extra_kwargs = {"thumbnail": {"write_only": True}}
 
     def get_thumbnail_url(self, obj):
-        if not obj.thumbnail:
+        try:
+            return obj.thumbnail.url if obj.thumbnail else None
+        except Exception:
             return None
-        # 썸네일도 S3 보안 주소가 필요하다면 위 Cut과 동일한 로직 적용 가능
-        return obj.thumbnail.url
