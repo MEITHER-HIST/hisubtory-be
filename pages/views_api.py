@@ -6,7 +6,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model, login, logout
 from subway.models import Line, Station
-from stories.models import Episode
+from stories.models import Episode, Webtoon
 
 User = get_user_model()
 
@@ -48,7 +48,7 @@ def _station_ids_for_line(line_id: int) -> list[int]:
         return [row[0] for row in cursor.fetchall()]
 
 def _pick_random_episode_for_station(station_id: int):
-    # ✅ 수정: station_id 대신 webtoon__station_id 사용
+    # ✅ 수정: station_id 대신 webtoon__station_id 사용 (FieldError 방지)
     qs = Episode.objects.filter(webtoon__station_id=station_id)
     if not qs.exists():
         return None
@@ -76,7 +76,7 @@ def main_api_view(request):
     station_ids = _station_ids_for_line(line_obj.id)
     stations = Station.objects.filter(id__in=station_ids, is_enabled=True)
     
-    # ✅ 수정: station_id로 직접 필터링
+    # ✅ 수정: webtoon__station_id__in 사용하여 관계 추적
     story_station_ids = set(
         Episode.objects.filter(
             webtoon__station_id__in=stations.values_list("id", flat=True),
@@ -118,13 +118,16 @@ def pick_episode_api_view(request):
     if not ep:
         return JsonResponse({"message": "episode_not_found"}, status=404)
 
+    # ✅ 필드명 수정: ep.title 대신 subtitle 사용
+    display_title = getattr(ep, 'subtitle', None) or f"EP{ep.episode_num}"
+
     return JsonResponse({
         "station_id": station_id,
-        "station_name": f"역 ID {station_id}",
-        "episode_id": ep.pk,
+        "station_name": ep.webtoon.station.station_name if ep.webtoon.station else f"역 ID {station_id}",
+        "episode_id": ep.episode_id,
         "episode_num": ep.episode_num,
-        "episode_title": ep.title or ep.subtitle or f"EP{ep.episode_num}",
-        "webtoon_id": ep.station_id,
+        "episode_title": display_title,
+        "webtoon_id": ep.webtoon_id,
     })
     
 @require_GET
@@ -141,20 +144,24 @@ def random_episode_api_view(request):
 
     station_ids = _station_ids_for_line(line_obj.id)
 
-    # ✅ 수정: webtoon__station_id 대신 station_id 사용 (에러 원인 제거)
-    qs = Episode.objects.filter(station_id__in=station_ids)
+    # ✅ 수정: station_id 대신 webtoon__station_id__in 사용 (FieldError 해결)
+    qs = Episode.objects.filter(webtoon__station_id__in=station_ids).select_related('webtoon__station')
     
     if not qs.exists():
         return JsonResponse({"message": "episode_not_found"}, status=404)
 
     ep = qs.order_by("?").first()
+    
+    # ✅ 변수 정의 추가: display_title 누락 해결
+    display_title = getattr(ep, 'subtitle', None) or f"EP{ep.episode_num}"
+
     return JsonResponse({
-        "station_id": ep.station_id,
-        "station_name": f"역 ID {ep.station_id}",
-        "episode_id": ep.pk,
+        "station_id": ep.webtoon.station_id,
+        "station_name": ep.webtoon.station.station_name,
+        "episode_id": ep.episode_id,
         "episode_num": ep.episode_num,
-        "episode_title": ep.title or f"EP{ep.episode_num}",
-        "webtoon_id": ep.station_id,
+        "episode_title": display_title,
+        "webtoon_id": ep.webtoon_id,
     })
 
 @require_GET

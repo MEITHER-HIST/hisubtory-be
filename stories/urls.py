@@ -2,15 +2,15 @@ from django.urls import path, include
 from .views import (
     StationStoryView, 
     EpisodeCutListCreateView, 
-    episode_detail_view, 
+    episode_detail,
     toggle_bookmark
 )
 from . import views
 
 urlpatterns = [
     # 1. HTML 렌더링 뷰 (기존 웹 페이지 유지)
-    path('episode/<int:episode_id>/', views.episode_detail_view, name='episode_detail'),
-
+    path('episode/<int:episode_id>/', views.episode_detail, name='episode_detail'),
+    
     # 2. 역 식별자 기반 스토리 조회 API (팀원 추가 기능)
     path('station/<str:station_identifier>/', StationStoryView.as_view(), name='station-story'),
 
