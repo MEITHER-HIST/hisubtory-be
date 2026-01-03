@@ -22,7 +22,7 @@ urlpatterns = [
          EpisodeDetailAPIView.as_view(), 
          name="episode_detail_api"),
     
-    path("api/accounts/", include("accounts.urls_api")),
+    path("api/accounts/", include("accounts.urls")),
     path("api/pages/", include("pages.urls_api")),
     path("api/stories/", include("stories.urls")),
     path("api/library/", include("library.urls")),
