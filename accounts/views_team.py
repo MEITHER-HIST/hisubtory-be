@@ -104,26 +104,29 @@ def get_team_shared_bookmarks(request):
 @authentication_classes([UnsafeSessionAuthentication])
 @permission_classes([IsAuthenticated])
 def handle_team_request(request, request_id):
-    """팀장의 가입 승인/거절 처리 (이 함수가 누락되어 에러가 났었습니다)"""
+    """팀장의 승인 시 자동으로 TeamMember 테이블에 등록"""
     action = request.data.get('action') # 'APPROVE' or 'REJECT'
     req = get_object_or_404(MembershipRequest, id=request_id)
     
-    # 권한 체크
+    # 권한 체크: 현재 로그인한 유저가 해당 팀의 팀장인지 확인
     if req.target_leader_code != request.user.leader_code:
         return Response({"success": False, "message": "권한이 없습니다."}, status=403)
 
     if action == 'APPROVE':
+        # 1. 신청서 상태 변경
         req.status = 'APPROVED'
         req.save()
         
-        team = Team.objects.get(leader=request.user)
+        # 2. 자동 승인 처리: TeamMember 테이블에 즉시 추가
+        team = Team.objects.get(team_code=req.target_leader_code)
         TeamMember.objects.get_or_create(team=team, user=req.user)
-        return Response({"success": True, "message": "승인되었습니다."})
+        
+        return Response({"success": True, "message": f"{req.user.username} 님이 팀원으로 등록되었습니다."})
     
     elif action == 'REJECT':
         req.status = 'REJECTED'
         req.save()
-        return Response({"success": True, "message": "반려되었습니다."})
+        return Response({"success": True, "message": "신청을 반려했습니다."})
     
     
 # accounts/views_team.py (기존 코드에 아래 함수 추가)
@@ -132,12 +135,29 @@ def handle_team_request(request, request_id):
 @authentication_classes([UnsafeSessionAuthentication])
 @permission_classes([IsAuthenticated])
 def membership_request_view(request):
-    """팀장/팀원 신청서 제출 로직"""
+    """팀원 신청 시 팀명과 팀 코드를 엄격히 대조"""
     data = request.data
+    request_type = data.get('request_type')
+    
+    # 팀원 신청(MEMBER)인 경우 검증 로직 추가
+    if request_type == 'MEMBER':
+        target_code = data.get('target_leader_code')
+        target_team_name = data.get('team_name')
+        
+        # DB에서 해당 코드와 팀명이 일치하는 팀이 있는지 확인
+        team_exists = Team.objects.filter(team_code=target_code, name=target_team_name).exists()
+        
+        if not team_exists:
+            return Response({
+                "success": False, 
+                "message": "팀명 또는 팀 코드가 일치하는 팀을 찾을 수 없습니다. 다시 확인해주세요."
+            }, status=400)
+
+    # 검증 통과 시 신청서 생성
     try:
         MembershipRequest.objects.create(
             user=request.user,
-            request_type=data.get('request_type'),
+            request_type=request_type,
             team_name=data.get('team_name'),
             applicant_name=data.get('applicant_name'),
             target_leader_code=data.get('target_leader_code', ''),

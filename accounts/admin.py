@@ -25,30 +25,37 @@ class CustomUserAdmin(UserAdmin):
 class MembershipRequestAdmin(admin.ModelAdmin):
     list_display = ['user', 'request_type', 'team_name', 'status', 'created_at']
     list_filter = ['status', 'request_type']
-    # 중복 정의되었던 reject_requests를 정리하고 하나로 합쳤습니다.
     actions = ['approve_requests', 'reject_requests']
 
-    @admin.action(description="선택된 항목 승인 (팀 자동 생성)")
+    @admin.action(description="선택된 항목 승인 (팀장/팀원 자동 처리)")
     def approve_requests(self, request, queryset):
-        count = 0
+        leader_count = 0
+        member_count = 0
+        
         for req in queryset:
             if req.status == 'PENDING':
+                # 1. 팀장 신청 승인 처리
                 if req.request_type == 'LEADER':
-                    # User 모델의 approve_as_leader 메서드 호출
                     req.user.approve_as_leader(req.team_name)
                     req.status = 'APPROVED'
                     req.save()
-                    count += 1
+                    leader_count += 1
+                
+                # 2. 팀원 신청 승인 처리 (이 부분이 추가되었습니다)
                 elif req.request_type == 'MEMBER':
-                    # 팀원 신청은 팀장이 처리하는 것이 원칙이지만, 
-                    # 관리자가 강제 승인할 경우 TeamMember에 추가 로직 구현 가능
-                    pass
-        self.message_user(request, f"{count}건의 팀장 신청이 승인되어 팀 코드가 발급되었습니다.")
-
-    @admin.action(description="선택된 항목 반려")
-    def reject_requests(self, request, queryset):
-        updated_count = queryset.filter(status='PENDING').update(status='REJECTED')
-        self.message_user(request, f"{updated_count}건의 신청이 반려되었습니다.")
+                    from .models import Team, TeamMember
+                    # 팀 코드로 해당 팀을 찾음
+                    try:
+                        team = Team.objects.get(team_code=req.target_leader_code)
+                        TeamMember.objects.get_or_create(team=team, user=req.user)
+                        req.status = 'APPROVED'
+                        req.save()
+                        member_count += 1
+                    except Team.DoesNotExist:
+                        # 팀을 찾을 수 없는 경우 예외 처리
+                        pass
+        
+        self.message_user(request, f"승인 완료: 팀장 {leader_count}건, 팀원 {member_count}건이 처리되었습니다.")
 
 # --- [3] 팀 및 팀원 관리 ---
 @admin.register(Team)

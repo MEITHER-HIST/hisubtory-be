@@ -30,14 +30,15 @@ def get_image_url(ep):
     return "https://via.placeholder.com/150"
 
 # --- [인증 및 기본 뷰] ---
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def signup_view(request):
-    if request.method == "POST":
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("login")
-    else: form = SignupForm()
-    return render(request, "accounts/signup.html", {"form": form})
+    form = SignupForm(request.data)
+    if form.is_valid():
+        form.save()
+        return Response({"success": True, "message": "회원가입 성공"})
+    return Response({"success": False, "errors": form.errors}, status=400)
 
 @api_view(['POST'])
 @authentication_classes([UnsafeSessionAuthentication])
