@@ -1,21 +1,26 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from .forms import SignupForm
-
-# API를 위한 임포트 추가
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+
+# DRF 관련 임포트
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+
+from .forms import SignupForm
+from library.models import UserViewedEpisode, Bookmark
 
 User = get_user_model()
 
-# --- 기존 HTML 뷰 (유지) ---
+# ✅ CSRF 검사를 무시하는 세션 인증 클래스 (리액트 연동 필수 설정)
+class UnsafeSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return 
+
+# --- [1] 회원가입 및 기본 뷰 ---
 
 def signup_view(request):
     if request.method == "POST":
@@ -27,64 +32,111 @@ def signup_view(request):
         form = SignupForm()
     return render(request, "accounts/signup.html", {"form": form})
 
+# --- [2] 로그인 API (JSON/Form 공용) ---
+
+@api_view(['POST'])
+@authentication_classes([UnsafeSessionAuthentication])
+@permission_classes([AllowAny])
 def login_view(request):
-    error = None
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            return redirect("main")
-        else:
-            error = "아이디 또는 비밀번호가 틀렸습니다."
-    return render(request, "accounts/login.html", {"error": error})
+    """리액트 JSON 요청과 일반 POST 요청을 모두 처리"""
+    data = request.data
+    login_id = data.get("username") or data.get("email")
+    password = data.get("password")
 
-@login_required
-def logout_view(request):
-    logout(request)
-    return redirect("login")
+    if not login_id or not password:
+        return Response({"success": False, "message": "아이디와 비밀번호를 입력해주세요."}, status=400)
 
-@login_required
-def me_view(request):
-    return redirect("main")
+    # 1. 이메일로 로그인 시도 시 username 찾기
+    actual_username = login_id
+    if "@" in login_id:
+        try:
+            user_obj = User.objects.get(email=login_id)
+            actual_username = user_obj.username
+        except User.DoesNotExist:
+            return Response({"success": False, "message": "가입되지 않은 이메일입니다."}, status=400)
 
-# --- 프론트엔드 연동을 위한 API 뷰 (추가) ---
-from rest_framework.authentication import SessionAuthentication
+    # 2. 인증 및 세션 생성
+    user = authenticate(request, username=actual_username, password=password)
+    
+    if user:
+        login(request, user)
+        return Response({
+            "success": True, 
+            "message": "로그인 성공",
+            "user": {"username": user.username, "email": user.email}
+        })
+    else:
+        return Response({"success": False, "message": "아이디 또는 비밀번호가 틀렸습니다."}, status=400)
 
-# CSRF 검사를 잠시 무시하는 세션 인증 클래스 생성 (개발용)
-class UnsafeSessionAuthentication(SessionAuthentication):
-    def enforce_csrf(self, request):
-        return  # CSRF 체크를 하지 않음
+# --- [3] 유저 정보 확인 및 로그아웃 ---
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication]) # 인증 방식 명시
-@permission_classes([IsAuthenticated])  # 로그인된 유저만 접근 가능
+@authentication_classes([UnsafeSessionAuthentication])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """현재 로그인 상태 확인 및 유저 정보 반환 (401 방지용)"""
+    return Response({
+        "success": True,
+        "username": request.user.username,
+        "email": request.user.email,
+    })
+
+@api_view(['POST', 'GET'])
+@authentication_classes([UnsafeSessionAuthentication])
+def logout_view(request):
+    logout(request)
+    if request.path.startswith('/api/'):
+        return Response({"success": True})
+    return redirect("login")
+
+# --- [4] 마이페이지 활동 기록 API (library 모델 연동) ---
+
+@api_view(['GET'])
+@authentication_classes([UnsafeSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def get_user_history(request):
-    """프론트엔드 마이페이지에 보낼 활동 기록 API"""
+    """사용자가 본 에피소드와 북마크한 목록을 반환"""
     user = request.user
     
-    # [중요] 나중에 RDS(DB) 연동 시 이 부분을 실제 모델 쿼리로 바꾸면 됩니다.
-    # 현재는 프론트엔드 화면 확인을 위해 가짜(Mock) 데이터를 보냅니다.
-    data = {
-        "recent": [
-            {
-                "id": "1",
-                "title": "시작된 여행",
-                "stationId": "서울역",
-                "imageUrl": "https://via.placeholder.com/150",
-                "content": "과거로의 여행이 시작되는 곳입니다."
-            },
-            {
-                "id": "2",
-                "title": "독립의 함성",
-                "stationId": "서대문역",
-                "imageUrl": "https://via.placeholder.com/150",
-                "content": "역사의 아픔과 희망이 공존하는 현장입니다."
-            }
-        ],
-        "saved": [] # 저장한 에피소드 데이터
-    }
-    
-    return Response(data)
+    # 최근 본 에피소드 (N:1 관계 추적)
+    viewed_qs = UserViewedEpisode.objects.filter(user=user).select_related('episode__webtoon__station').order_by('-viewed_at')[:10]
+    recent_data = []
+    for record in viewed_qs:
+        ep = record.episode
+        # 컷(Cut) 모델의 첫 이미지를 썸네일로 활용
+        img_url = "https://via.placeholder.com/150"
+        if ep.cuts.exists():
+            first_cut = ep.cuts.first()
+            img_url = first_cut.image.url if hasattr(first_cut.image, 'url') else str(first_cut.image)
 
+        recent_data.append({
+            "id": ep.episode_id,
+            "title": ep.subtitle,
+            "stationId": ep.webtoon.station.station_name,
+            "imageUrl": img_url,
+            "viewed_at": record.viewed_at
+        })
+
+    # 저장한 북마크 목록
+    saved_qs = Bookmark.objects.filter(user=user).select_related('episode__webtoon__station').order_by('-created_at')
+    saved_data = []
+    for bookmark in saved_qs:
+        ep = bookmark.episode
+        img_url = "https://via.placeholder.com/150"
+        if ep.cuts.exists():
+            first_cut = ep.cuts.first()
+            img_url = first_cut.image.url if hasattr(first_cut.image, 'url') else str(first_cut.image)
+
+        saved_data.append({
+            "id": ep.episode_id,
+            "title": ep.subtitle,
+            "stationId": ep.webtoon.station.station_name,
+            "imageUrl": img_url,
+        })
+    
+    return Response({
+        "success": True,
+        "username": user.username,
+        "recent": recent_data,
+        "saved": saved_data
+    })

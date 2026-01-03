@@ -183,15 +183,20 @@ AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "ap-northeast-2")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 
-# (선택) CloudFront 붙일 때만 사용. 없으면 비워두기
-AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "")
+AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "").strip()
+MEDIA_URL = (
+    f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    if AWS_S3_CUSTOM_DOMAIN
+    else "/media/"
+)
+
+MEDIA_LOCATION = "media"
 
 # 업로드 파일을 public로 열어둘 거면 False (URL에 서명 안 붙음)
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = None  # django-storages 권장
 AWS_S3_FILE_OVERWRITE = False
 
-MEDIA_LOCATION = "media"
 
 STORAGES = {
     # MEDIA(업로드)만 S3로
