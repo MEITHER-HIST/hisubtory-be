@@ -13,10 +13,17 @@ class CutSerializer(serializers.ModelSerializer):
         fields = ['cut_id', 'image', 'caption', 'cut_order', 'image_url']
 
     def get_image_url(self, obj):
+        # 1. 데이터가 없는 경우
         if not obj.image:
             return None
         
-        # S3 Presigned URL 생성 (보안 및 접근성 확보)
+        # 2. ✅ 핵심 수정: 이미 전체 URL(https://...)이 들어있는 경우 그대로 반환
+        # CloudFront 주소 등이 DB에 직접 저장된 경우 Presigned URL 생성이 필요 없습니다.
+        image_path = str(obj.image)
+        if image_path.startswith('http'):
+            return image_path
+        
+        # 3. 상대 경로(media/...)인 경우에만 S3 Presigned URL 생성
         try:
             s3 = boto3.client(
                 "s3",
@@ -29,7 +36,7 @@ class CutSerializer(serializers.ModelSerializer):
                 ClientMethod="get_object",
                 Params={
                     "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                    "Key": str(obj.image)
+                    "Key": image_path
                 },
                 ExpiresIn=getattr(settings, "AWS_PRESIGN_EXPIRES", 600)
             )
@@ -78,6 +85,9 @@ class WebtoonSerializer(serializers.ModelSerializer):
 
     def get_thumbnail_url(self, obj):
         try:
+            # 썸네일도 URL 형태라면 바로 반환하도록 예외 처리 가능
+            if obj.thumbnail and str(obj.thumbnail).startswith('http'):
+                return str(obj.thumbnail)
             return obj.thumbnail.url if obj.thumbnail else None
         except Exception:
             return None
