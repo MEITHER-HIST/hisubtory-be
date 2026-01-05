@@ -232,16 +232,21 @@ else:
     MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/{MEDIA_LOCATION}/"
 
 CSRF_TRUSTED_ORIGINS = [
+    "http://hisub-alb-1329951961.ap-northeast-2.elb.amazonaws.com",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://127.0.0.1",
+    "http://10.0.0.58",
+    "http://10.0.0.134",
 ]
 
 # CORS 및 CSRF 설정 (하나로 통합)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://hisub-alb-1329951961.ap-northeast-2.elb.amazonaws.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -262,13 +267,19 @@ REST_FRAMEWORK = {
     ),
 }
 
+REDIS_HOST = os.getenv("REDIS_HOST", "clustercfg.hisub-redis.lkssu5.apn2.cache.amazonaws.com")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_DB   = os.getenv("REDIS_DB", "1")
+
+REDIS_URL = os.getenv("REDIS_URL", f"rediss://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")  # TLS면 rediss
 # Redis (WSL에서 뜬 Redis를 윈도우 Django가 localhost로 접근)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "ssl_cert_reqs": None,
         },
     }
 }
