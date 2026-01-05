@@ -35,38 +35,34 @@ def signup_view(request):
 # --- [2] 로그인 API (JSON/Form 공용) ---
 
 @api_view(['POST'])
-@authentication_classes([UnsafeSessionAuthentication])
 @permission_classes([AllowAny])
 def login_view(request):
-    """리액트 JSON 요청과 일반 POST 요청을 모두 처리"""
+    # 🔍 1. 서버 터미널에 들어온 원본 데이터를 통째로 찍어봅니다.
+    print("="*50)
+    print(f"원본 데이터 타입: {type(request.data)}")
+    print(f"들어온 데이터: {request.data}")
+    print("="*50)
+
     data = request.data
-    login_id = data.get("username") or data.get("email")
-    password = data.get("password")
+    # 🔍 2. 리액트에서 보낼 법한 모든 이름을 다 뒤져봅니다.
+    login_id = data.get('username') or data.get('id') or data.get('email') or data.get('login_id')
+    password = data.get('password') or data.get('pw')
 
     if not login_id or not password:
-        return Response({"success": False, "message": "아이디와 비밀번호를 입력해주세요."}, status=400)
-
-    # 1. 이메일로 로그인 시도 시 username 찾기
-    actual_username = login_id
-    if "@" in login_id:
-        try:
-            user_obj = User.objects.get(email=login_id)
-            actual_username = user_obj.username
-        except User.DoesNotExist:
-            return Response({"success": False, "message": "가입되지 않은 이메일입니다."}, status=400)
-
-    # 2. 인증 및 세션 생성
-    user = authenticate(request, username=actual_username, password=password)
-    
-    if user:
-        login(request, user)
         return Response({
-            "success": True, 
-            "message": "로그인 성공",
-            "user": {"username": user.username, "email": user.email}
-        })
+            "success": False,
+            "message": "필드명이 일치하지 않습니다.",
+            "debug_received_data": data # 리액트 개발자 도구에서도 확인 가능하게 함
+        }, status=400)
+
+    # 🔍 3. 이제 인증 시도
+    user = authenticate(username=login_id, password=password)
+    
+    if user is not None:
+        login(request, user)
+        return Response({"success": True, "username": user.username})
     else:
-        return Response({"success": False, "message": "아이디 또는 비밀번호가 틀렸습니다."}, status=400)
+        return Response({"success": False, "message": "invalid_credentials"}, status=401)
 
 # --- [3] 유저 정보 확인 및 로그아웃 ---
 
