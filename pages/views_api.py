@@ -33,7 +33,7 @@ def logout_api_view(request):
 
 @require_GET
 def me_api_view(request):
-    """현재 로그인 유무와 사용자명만 반환 (마이페이지 기본 진입용)"""
+    """현재 로그인 유무와 사용자명만 반환"""
     return JsonResponse({
         "success": True,
         "is_authenticated": bool(request.user and request.user.is_authenticated),
@@ -55,13 +55,15 @@ def main_api_view(request):
     station_ids = _station_ids_for_line(line_obj.id)
     stations = Station.objects.filter(id__in=station_ids, is_enabled=True)
     
+    # 해당 노선의 역들 중 스토리가 있는 역 ID 추출
     story_station_ids = set(
         Episode.objects.filter(webtoon__station_id__in=stations.values_list("id", flat=True))
         .values_list("webtoon__station_id", flat=True).distinct()
     )
 
+    is_auth = request.user.is_authenticated
     viewed_station_ids = set()
-    if request.user.is_authenticated:
+    if is_auth:
         viewed_station_ids = set(
             UserViewedEpisode.objects.filter(user=request.user)
             .values_list("episode__webtoon__station_id", flat=True)
@@ -70,13 +72,20 @@ def main_api_view(request):
     station_list = []
     for s in stations:
         is_viewed = (s.id in viewed_station_ids)
+        has_story = (s.id in story_station_ids)
+        
+        # [프론트엔드 연동 로직]
+        # 로그인 시: 스토리가 있으면 무조건 클릭 가능 (has_story)
+        # 비로그인 시: 기본적으로 false이나, 프론트엔드 fetchMain에서 localStorage와 합쳐 처리함
+        clickable = has_story if is_auth else is_viewed
+        
         station_list.append({
             "id": s.id,
             "name": s.station_name,
-            "clickable": is_viewed,
+            "clickable": clickable,
             "color": "green" if is_viewed else "gray", 
             "is_viewed": is_viewed,
-            "has_story": (s.id in story_station_ids),
+            "has_story": has_story,
         })
 
     return JsonResponse({
@@ -88,30 +97,54 @@ def main_api_view(request):
 
 @require_GET
 def pick_episode_api_view(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"success": False, "message": "login_required"}, status=401)
+    """
+    특정 역 클릭 시 에피소드 ID 반환
+    로그아웃 상태에서도 에피소드를 볼 수 있도록 auth 체크 완화
+    """
     station_id = request.GET.get("station_id")
-    last_viewed = UserViewedEpisode.objects.filter(
-        user=request.user, episode__webtoon__station_id=station_id
-    ).select_related('episode').order_by('-viewed_at').first()
-    ep = last_viewed.episode if last_viewed else Episode.objects.filter(webtoon__station_id=station_id).first()
+    if not station_id:
+        return JsonResponse({"success": False, "message": "station_id_required"}, status=400)
+
+    ep = None
+    # 1. 로그인 유저인 경우: 가장 최근에 본 에피소드 우선
+    if request.user.is_authenticated:
+        last_viewed = UserViewedEpisode.objects.filter(
+            user=request.user, episode__webtoon__station_id=station_id
+        ).select_related('episode').order_by('-viewed_at').first()
+        if last_viewed:
+            ep = last_viewed.episode
+
+    # 2. 비로그인 유저이거나 본 기록이 없는 경우: 해당 역의 첫 에피소드
+    if not ep:
+        ep = Episode.objects.filter(webtoon__station_id=station_id).order_by('episode_num').first()
+    
     if not ep:
         return JsonResponse({"success": False, "message": "no_episode"}, status=404)
+    
     return JsonResponse({
         "success": True,
         "episode_id": str(ep.episode_id),
+        "station_id": station_id, # ✅ 프론트 localStorage 저장용으로 반드시 포함
         "title": getattr(ep, 'subtitle', f"EP {ep.episode_num}")
     })
 
 @require_GET
 def random_episode_api_view(request):
+    """랜덤 에피소드 추천"""
     line_num = request.GET.get("line", "3")
     line_obj = Line.objects.filter(line_name=f"{line_num}호선").first()
+    if not line_obj:
+        return JsonResponse({"message": "line_not_found"}, status=404)
+
     station_ids = _station_ids_for_line(line_obj.id)
     ep = Episode.objects.filter(webtoon__station_id__in=station_ids).order_by("?").first()
-    if not ep: return JsonResponse({"message": "no_episode"}, status=404)
+    
+    if not ep: 
+        return JsonResponse({"message": "no_episode"}, status=404)
+
     return JsonResponse({
-        "station_id": str(ep.webtoon.station_id),
+        "success": True,
+        "station_id": str(ep.webtoon.station_id), # ✅ station_id 필드 추가 (NaN 방지)
         "station_name": ep.webtoon.station.station_name,
         "episode_id": str(ep.episode_id),
     })
