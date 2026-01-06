@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse, JsonResponse
 from subway.models import Station, Line
 from stories.models import Episode
 from library.models import UserViewedEpisode, Bookmark
@@ -35,48 +36,11 @@ def get_episode(user, station_id, fetch_unseen=True):
 # 메인 화면 뷰
 # ===========================
 def main_view(request):
-    # 1️⃣ 노선 목록 가져오기 + 정렬
-    lines = Line.objects.annotate(
-        line_number=Cast(Substr('line_name', 1, 1), IntegerField()),
-        is_active_calc=Case(
-            When(line_name='3호선', then=1),
-            default=0,
-            output_field=IntegerField()
-        )
-    ).order_by('-is_active_calc', 'line_number')
-
-    line_list = []
-    for line in lines:
-        is_active = bool(line.is_active_calc)
-        display_name = line.line_name + ('' if is_active else ' (준비중)')
-        line_list.append({
-            'id': line.id,
-            'line_name': display_name,
-            'is_active': is_active
-        })
-
-    # 2️⃣ 선택된 노선 처리
-    line_num = request.GET.get('line', '3')
-    try:
-        line_int = int(line_num)
-    except ValueError:
-        line_int = 3
-    line_obj = Line.objects.filter(line_name=f"{line_int}호선").first()
-
-    # 3️⃣ 역 목록 (팀장님 명세 8번 기준 is_enabled 필터링)
-    stations = Station.objects.filter(is_enabled=True) if line_obj else Station.objects.none()
-
-    # 4️⃣ 로그인 유저 및 시청 기록
+    # 0) 헬스체커/루트 접근은 OK로 응답 (템플릿 미사용)
+    #    - 브라우저로 열어도 200이 떠서 배포 확인용으로 좋음
     user = request.user if request.user.is_authenticated else None
-    viewed_station_ids = set()
-    if user:
-        # ✅ 수정: 관계 경로 episode__webtoon__station_id (명세 2-3번 계층 반영)
-        viewed_station_ids = set(
-            UserViewedEpisode.objects.filter(user=user)
-            .values_list("episode__webtoon__station_id", flat=True)
-        )
 
-    # 5️⃣ 역 클릭 처리
+    # 1) 역 클릭 처리(기존 로직 유지)
     clicked_station_id = request.GET.get('clicked_station')
     if clicked_station_id:
         try:
@@ -84,14 +48,13 @@ def main_view(request):
             episode_id_for_redirect = None
 
             if user:
-                # ✅ 수정: episode__webtoon__station_id 사용
                 viewed_episodes = UserViewedEpisode.objects.filter(
                     user=user,
                     episode__webtoon__station_id=clicked_station_id
                 )
                 if viewed_episodes.exists():
                     last_episode = viewed_episodes.latest('viewed_at').episode
-                    episode_id_for_redirect = last_episode.episode_id # id -> episode_id
+                    episode_id_for_redirect = last_episode.episode_id
                 else:
                     ep = get_episode(user, clicked_station_id)
                     if ep:
@@ -103,40 +66,45 @@ def main_view(request):
 
             if episode_id_for_redirect:
                 return redirect('episode_detail', episode_id=episode_id_for_redirect)
+
+            # 클릭은 했지만 에피소드 못 찾은 경우도 “반드시 응답”
+            return JsonResponse({"ok": False, "reason": "no_episode"}, status=404)
+
         except ValueError:
-            pass
+            return JsonResponse({"ok": False, "reason": "invalid_station_id"}, status=400)
 
-    # 6️⃣ 랜덤 스토리 버튼 처리
-    if request.GET.get('random') == '1' and stations.exists():
-        candidate_stations = list(stations)
-        if user:
-            candidate_stations = [s for s in stations if s.id not in viewed_station_ids]
-            if not candidate_stations:
-                candidate_stations = list(stations)
+    # 2) 랜덤 스토리 버튼 처리(기존 로직 유지)
+    if request.GET.get('random') == '1':
+        line_num = request.GET.get('line', '3')
+        try:
+            line_int = int(line_num)
+        except ValueError:
+            line_int = 3
 
-        random_station = random.choice(candidate_stations)
-        ep = get_episode(user, random_station.id)
-        if ep:
-            return redirect('episode_detail', episode_id=ep.episode_id)
+        line_obj = Line.objects.filter(line_name=f"{line_int}호선").first()
+        stations = Station.objects.filter(is_enabled=True) if line_obj else Station.objects.none()
 
-    # 7️⃣ 역 상태 표시
-    station_list = []
-    for s in stations:
-        station_list.append({
-            'id': s.id,
-            'name': s.station_name,
-            'clickable': bool(user),
-            'color': 'green' if user and s.id in viewed_station_ids else 'gray'
-        })
+        if stations.exists():
+            viewed_station_ids = set()
+            if user:
+                viewed_station_ids = set(
+                    UserViewedEpisode.objects.filter(user=user)
+                    .values_list("episode__webtoon__station_id", flat=True)
+                )
 
-    context = {
-        'lines': line_list,
-        'selected_line': line_obj,
-        'stations': station_list,
-        'user': user,
-        'show_random_button': stations.exists(),
-    }
-    return render(request, 'pages/main.html', context)
+            candidate_stations = list(stations)
+            if user:
+                candidate_stations = [s for s in stations if s.id not in viewed_station_ids] or list(stations)
+
+            random_station = random.choice(candidate_stations)
+            ep = get_episode(user, random_station.id)
+            if ep:
+                return redirect('episode_detail', episode_id=ep.episode_id)
+
+        return JsonResponse({"ok": False, "reason": "no_station_or_episode"}, status=404)
+
+    # 3) 그냥 / 접근은 OK로 응답 (템플릿 대신)
+    return HttpResponse("OK")
 
 
 # ===========================
