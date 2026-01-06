@@ -1,23 +1,16 @@
-# library/views.py
-
 from __future__ import annotations
-
 from typing import Any, Dict
-
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
-
 from .models import UserViewedEpisode, Bookmark
 
-
-# ✅ CSRF 검사를 건너뛰는 세션 인증 클래스 (개발/테스트용)
+# CSRF 검사를 건너뛰는 세션 인증 클래스
 class UnsafeSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return
-
 
 def _safe_episode_id(episode: Any) -> str:
     return str(
@@ -28,6 +21,7 @@ def _safe_episode_id(episode: Any) -> str:
         )
     )
 
+import urllib.parse
 
 def _safe_thumbnail_url(webtoon: Any) -> str:
     if not webtoon:
@@ -37,45 +31,46 @@ def _safe_thumbnail_url(webtoon: Any) -> str:
     if not thumb:
         return ""
 
-    # FileField/ImageField 케이스
     try:
+        # 1. 원본 URL 추출
+        url = ""
         if hasattr(thumb, "url"):
-            return thumb.url or ""
+            url = thumb.url or ""
+        elif isinstance(thumb, str):
+            url = thumb
+
+        # 2. URL 디코딩 (%3A -> :, %2F -> / 복구)
+        url = urllib.parse.unquote(url)
+
+        # 3. [핵심 로직] 이미 전체 경로(http)가 포함된 경우 처리
+        if 'http' in url:
+            # /media/http... 처럼 앞에 미디어 경로가 붙어있다면 뒤쪽 http부터 잘라냄
+            if '/media/http' in url:
+                url = 'http' + url.split('/media/http')[-1]
+            # 혹은 이미 깨끗한 전체 주소라면 그대로 유지됨
+            return url
+
+        return url
     except Exception:
         return ""
-
-    # 문자열로 저장된 케이스(혹시나)
-    if isinstance(thumb, str):
-        return thumb
-
-    return ""
-
 
 def _make_item_from_episode(episode: Any) -> Dict[str, Any]:
     webtoon = getattr(episode, "webtoon", None)
     station = getattr(webtoon, "station", None) if webtoon else None
-
     return {
         "id": _safe_episode_id(episode),
-        "title": getattr(webtoon, "title", "") if webtoon else "",
-        "stationName": getattr(station, "station_name", "") if station else "",
+        "title": getattr(episode, "subtitle", "") or f"{getattr(webtoon, 'title', '')} 에피소드",
+        "stationName": getattr(station, "station_name", "알 수 없는 역") if station else "알 수 없는 역",
         "imageUrl": _safe_thumbnail_url(webtoon),
-        "content": getattr(episode, "subtitle", "") or "",
+        "content": f"{getattr(webtoon, 'title', '웹툰')}의 이야기입니다.",
     }
-
 
 @api_view(["GET"])
 @authentication_classes([UnsafeSessionAuthentication])
 @permission_classes([IsAuthenticated])
 def get_user_history_api(request):
-    user = getattr(request, "user", None)
-
-    # permission_classes가 막아주지만, 응답을 더 명확히 하려고 한 번 더 방어
-    if not getattr(user, "is_authenticated", False):
-        return Response(
-            {"detail": "Authentication credentials were not provided."},
-            status=status.HTTP_401_UNAUTHORIZED,
-        )
+    """최근 본 기록 10개와 내 이야기(북마크) 데이터를 반환"""
+    user = request.user
 
     # 1) 최근 본 이야기 10개
     viewed_qs = (
@@ -93,14 +88,12 @@ def get_user_history_api(request):
 
     recent_data = [
         _make_item_from_episode(v.episode)
-        for v in viewed_qs
-        if getattr(v, "episode", None) is not None
+        for v in viewed_qs if getattr(v, "episode", None)
     ]
 
     saved_data = [
         _make_item_from_episode(b.episode)
-        for b in bookmark_qs
-        if getattr(b, "episode", None) is not None
+        for b in bookmark_qs if getattr(b, "episode", None)
     ]
 
     return Response(

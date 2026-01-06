@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
+from library import views as library_views
 
 urlpatterns = [
-    path('history/', views.get_user_history_api, name='get_user_history'),
+    # ✅ 프론트엔드 fetch("/api/library/history/")와 매칭됩니다.
+    path("history/", library_views.get_user_history_api, name="library_history"),
 ]
