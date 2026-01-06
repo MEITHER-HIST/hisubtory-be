@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # 템플릿 뷰
-    path('', views.main_view, name='main'),
-    path('mypage/', views.mypage_view, name='mypage'),
-] 
+    # Main 화면 데이터 (역 목록 등)
+    path('v1/main/', views.main_view, name='main_api'),
+    
+]
