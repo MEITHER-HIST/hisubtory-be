@@ -23,7 +23,7 @@ jobs:
       - name: Create deployment package
         run: |
           zip -r hisubBE-deploy.zip . \
-            -x "*.git*" ".github/*" "__pycache__/*" "*.pyc"
+            -x "*.git*" ".github/*" "__pycache__/*" "*.pyc" ".DS_Store" "media/*" "db.sqlite3" "venv/*"
 
       - name: Upload to S3
         run: |
