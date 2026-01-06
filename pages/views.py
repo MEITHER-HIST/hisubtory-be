@@ -99,6 +99,7 @@ def main_view(request):
 
     return Response({
         "success": True,
+        "test": "check",
         "lines": line_list,
         "stations": station_list,
         "show_random_button": stations.exists(),
