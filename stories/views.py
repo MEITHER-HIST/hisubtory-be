@@ -91,15 +91,52 @@ class EpisodeDetailAPIView(generics.RetrieveAPIView):
 # ✅ 2. 스테이션 스토리 뷰 (랜덤 로직)
 class StationStoryView(APIView):
     permission_classes = [AllowAny]
-    def get(self, request, station_identifier):
-        decoded_name = unquote(station_identifier)
-        try:
-            episodes = Episode.objects.filter(webtoon__station_id=decoded_name) if decoded_name.isdigit() else Episode.objects.all()
-            episode = episodes.order_by('?').first()
-            if not episode: return Response({"message": "데이터가 없습니다."}, status=404)
-            return Response(StorySerializer(episode).data)
-        except Exception as e: return Response({"error": str(e)}, status=500)
 
+    def get(self, request, station_identifier=None):
+        # 1. 파라미터 수집
+        sid = station_identifier or request.GET.get('station_id')
+        exclude_id = request.GET.get('exclude')
+        
+        if not sid:
+            return Response({"success": False, "message": "역 정보가 없습니다."}, status=400)
+            
+        decoded_name = unquote(sid)
+        
+        try:
+            # 2. 필터링 로직 (managed=False 이므로 webtoon_id FK 활용)
+            # Episode는 webtoon_id를 가지고 있으며, Webtoon은 station_id를 가지고 있음
+            if decoded_name.isdigit():
+                episodes = Episode.objects.filter(webtoon__station_id=decoded_name)
+            else:
+                episodes = Episode.objects.filter(webtoon__station__name__contains=decoded_name)
+            
+            # 3. 공개된 에피소드만 (DB의 is_published 필드 반영)
+            episodes = episodes.filter(is_published=True)
+            
+            # 4. 현재 에피소드 제외
+            if exclude_id:
+                episodes = episodes.exclude(episode_id=exclude_id)
+                
+            # 5. 랜덤 추출
+            episode = episodes.order_by('?').first()
+            
+            if not episode:
+                return Response({"success": False, "message": "불러올 수 있는 다른 이야기가 없습니다."}, status=404)
+            
+            # 6. ✅ 실제 DB 필드명(subtitle)을 반영하여 응답 구성
+            return Response({
+                "success": True,
+                "episode_id": episode.episode_id,
+                "episode_num": episode.episode_num,
+                "subtitle": episode.subtitle,  # 👈 episode_title 대신 실제 필드명 사용
+                "history_summary": episode.history_summary,
+                "webtoon_id": episode.webtoon_id
+            })
+
+        except Exception as e:
+            # 에러 발생 시 로그 확인을 위해 에러 내용을 포함
+            return Response({"success": False, "error": str(e)}, status=500)
+        
 # ✅ 3. 에피소드 컷 리스트
 class EpisodeCutListCreateView(generics.ListCreateAPIView):
     serializer_class = CutSerializer
