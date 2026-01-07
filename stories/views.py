@@ -121,7 +121,11 @@ class StationStoryView(APIView):
             episode = episodes.order_by('?').first()
             
             if not episode:
-                return Response({"success": False, "message": "새로운 에피소드를 준비 중이에요!"}, status=404)
+                # 🚩 status=404를 삭제하여 정상 응답(200)으로 보냅니다.
+                return Response({
+                    "success": False, 
+                    "message": "새로운 에피소드를 준비 중이에요!"
+                })
             
             # 6. ✅ 실제 DB 필드명(subtitle)을 반영하여 응답 구성
             return Response({
