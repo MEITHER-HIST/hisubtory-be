@@ -74,17 +74,18 @@ def main_api_view(request):
         is_viewed = (s.id in viewed_station_ids)
         has_story = (s.id in story_station_ids)
         
-        # [프론트엔드 연동 로직]
-        # 로그인 시: 스토리가 있으면 무조건 클릭 가능 (has_story)
-        # 비로그인 시: 기본적으로 false이나, 프론트엔드 fetchMain에서 localStorage와 합쳐 처리함
-        clickable = has_story if is_auth else is_viewed
+        # ✅ [수정] 프론트엔드 기획 변경 반영
+        # 로그인 시: 스토리가 있으면 클릭 가능 (has_story)
+        # 비로그인 시: 무조건 클릭 불가 (clickable = False) -> 오직 랜덤 버튼으로만 유도
+        clickable = has_story if is_auth else False
         
         station_list.append({
             "id": s.id,
             "name": s.station_name,
             "clickable": clickable,
-            "color": "green" if is_viewed else "gray", 
-            "is_viewed": is_viewed,
+            # ✅ [수정] 비로그인 시에는 항상 gray로 표시되도록 is_viewed 무시
+            "color": "green" if (is_auth and is_viewed) else "gray", 
+            "is_viewed": is_viewed if is_auth else False,
             "has_story": has_story,
         })
 
@@ -99,7 +100,6 @@ def main_api_view(request):
 def pick_episode_api_view(request):
     """
     특정 역 클릭 시 에피소드 ID 반환
-    로그아웃 상태에서도 에피소드를 볼 수 있도록 auth 체크 완화
     """
     station_id = request.GET.get("station_id")
     if not station_id:
@@ -124,19 +124,20 @@ def pick_episode_api_view(request):
     return JsonResponse({
         "success": True,
         "episode_id": str(ep.episode_id),
-        "station_id": station_id, # ✅ 프론트 localStorage 저장용으로 반드시 포함
+        "station_id": station_id,
         "title": getattr(ep, 'subtitle', f"EP {ep.episode_num}")
     })
 
 @require_GET
 def random_episode_api_view(request):
-    """랜덤 에피소드 추천"""
+    """랜덤 에피소드 추천 (비로그인도 사용 가능)"""
     line_num = request.GET.get("line", "3")
     line_obj = Line.objects.filter(line_name=f"{line_num}호선").first()
     if not line_obj:
         return JsonResponse({"message": "line_not_found"}, status=404)
 
     station_ids = _station_ids_for_line(line_obj.id)
+    # 스토리가 있는 역들 중에서만 랜덤 추출
     ep = Episode.objects.filter(webtoon__station_id__in=station_ids).order_by("?").first()
     
     if not ep: 
@@ -144,7 +145,7 @@ def random_episode_api_view(request):
 
     return JsonResponse({
         "success": True,
-        "station_id": str(ep.webtoon.station_id), # ✅ station_id 필드 추가 (NaN 방지)
+        "station_id": str(ep.webtoon.station_id),
         "station_name": ep.webtoon.station.station_name,
         "episode_id": str(ep.episode_id),
     })
