@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from .models import UserViewedEpisode, Bookmark
+from stories.models import Cut  # 🚩 stories 앱의 Cut 모델 임포트
+import urllib.parse
 
 # CSRF 검사를 건너뛰는 세션 인증 클래스
 class UnsafeSessionAuthentication(SessionAuthentication):
@@ -21,33 +23,31 @@ def _safe_episode_id(episode: Any) -> str:
         )
     )
 
-import urllib.parse
-
-def _safe_thumbnail_url(webtoon: Any) -> str:
-    if not webtoon:
+def _safe_thumbnail_url(obj: Any) -> str:
+    """
+    webtoon 객체의 thumbnail 필드나 cut 객체의 image 필드로부터
+    URL을 안전하게 추출하고 정제합니다.
+    """
+    if not obj:
         return ""
 
-    thumb = getattr(webtoon, "thumbnail", None)
+    # 🚩 [수정] DB 구조에 맞게 Cut은 'image', Webtoon은 'thumbnail' 필드 참조
+    thumb = getattr(obj, "image", getattr(obj, "thumbnail", None))
     if not thumb:
         return ""
 
     try:
-        # 1. 원본 URL 추출
         url = ""
         if hasattr(thumb, "url"):
             url = thumb.url or ""
         elif isinstance(thumb, str):
             url = thumb
 
-        # 2. URL 디코딩 (%3A -> :, %2F -> / 복구)
         url = urllib.parse.unquote(url)
 
-        # 3. [핵심 로직] 이미 전체 경로(http)가 포함된 경우 처리
         if 'http' in url:
-            # /media/http... 처럼 앞에 미디어 경로가 붙어있다면 뒤쪽 http부터 잘라냄
             if '/media/http' in url:
                 url = 'http' + url.split('/media/http')[-1]
-            # 혹은 이미 깨끗한 전체 주소라면 그대로 유지됨
             return url
 
         return url
@@ -57,11 +57,21 @@ def _safe_thumbnail_url(webtoon: Any) -> str:
 def _make_item_from_episode(episode: Any) -> Dict[str, Any]:
     webtoon = getattr(episode, "webtoon", None)
     station = getattr(webtoon, "station", None) if webtoon else None
+    
+    # 🚩 [수정] DB의 'cut_order' 필드를 기준으로 첫 번째 장면을 가져옵니다.
+    first_cut = Cut.objects.filter(episode=episode).order_by('cut_order').first()
+    
+    # 1순위: 에피소드 고유 장면(Cut.image) / 2순위: 웹툰 대표 이미지(Webtoon.thumbnail)
+    if first_cut and getattr(first_cut, 'image', None):
+        final_image_url = _safe_thumbnail_url(first_cut)
+    else:
+        final_image_url = _safe_thumbnail_url(webtoon)
+
     return {
         "id": _safe_episode_id(episode),
         "title": getattr(episode, "subtitle", "") or f"{getattr(webtoon, 'title', '')} 에피소드",
         "stationName": getattr(station, "station_name", "알 수 없는 역") if station else "알 수 없는 역",
-        "imageUrl": _safe_thumbnail_url(webtoon),
+        "imageUrl": final_image_url,
         "content": f"{getattr(webtoon, 'title', '웹툰')}의 이야기입니다.",
     }
 
