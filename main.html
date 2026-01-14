@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exported Page</title>
+
+    <!-- CSS 연결: 아래 href는 나중에 네 css 파일 경로로 바꿔줘 -->
+    <link rel="stylesheet" href="./pure.css" />
+  </head>
+  <body>
+    <div id="root">
+      <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div class="min-h-screen flex flex-col">
+          <header class="bg-white shadow-sm">
+            <div
+              class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between"
+            >
+              <div class="relative">
+                <button
+                  class="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="노선 선택"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-menu w-6 h-6"
+                  >
+                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+              <h1
+                class="absolute left-1/2 transform -translate-x-1/2 text-blue-600 tracking-wider"
+              >
+                HISUBTORY
+              </h1>
+              <div class="flex items-center gap-2">
+                <button
+                  class="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-user w-4 h-4"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle></svg
+                  ><span>로그인</span>
+                </button>
+              </div>
+            </div>
+          </header>
+          <main class="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+            <div class="text-center mb-6">
+              <h2 class="text-gray-900 mb-2">서울 지하철 3호선 역사 여행</h2>
+              <p class="text-gray-600">
+                역을 클릭하거나 랜덤으로 선택해서 역사 스토리를 탐험하세요
+              </p>
+            </div>
+            <div class="mb-6">
+              <div
+                class="relative w-full bg-white rounded-2xl shadow-lg p-8 overflow-x-auto"
+              >
+                <svg width="1200" height="650" class="mx-auto">
+                  <line
+                    x1="100"
+                    y1="100"
+                    x2="1150"
+                    y2="100"
+                    stroke="#EF7C1C"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                  ></line>
+                  <line
+                    x1="1150"
+                    y1="100"
+                    x2="1150"
+                    y2="300"
+                    stroke="#EF7C1C"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                  ></line>
+                  <line
+                    x1="1150"
+                    y1="300"
+                    x2="100"
+                    y2="300"
+                    stroke="#EF7C1C"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="300"
+                    x2="100"
+                    y2="500"
+                    stroke="#EF7C1C"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                  ></line>
+                  <line
+                    x1="100"
+                    y1="500"
+                    x2="1010"
+                    y2="500"
+                    stroke="#EF7C1C"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                  ></line>
+                  <g>
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="100"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      대화
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="170"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="170"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      주엽
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="240"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="240"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      정발산
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="310"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="310"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      마두
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="380"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="380"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      백석
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="450"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="450"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      대곡
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="520"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="520"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      화정
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="590"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="590"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      원당
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="660"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="660"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      원흥
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="730"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="730"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      삼송
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="800"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="800"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      지축
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="870"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="870"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      구파발
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="940"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="940"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      연신내
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1010"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1010"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      불광
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1080"
+                      cy="100"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1080"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      녹번
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1150"
+                      cy="100"
+                      r="12"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1150"
+                      y="80"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      홍제
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1150"
+                      cy="300"
+                      r="12"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1150"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      무악재
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1080"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1080"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      독립문
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="1010"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="1010"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      경복궁
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="940"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="940"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      안국
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="870"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="870"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      종로3가
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="800"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="800"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      을지로3가
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="730"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="730"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      충무로
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="660"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="660"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      동대입구
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="590"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="590"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      약수
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="520"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="520"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      금호
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="450"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="450"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      옥수
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="380"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="380"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      압구정
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="310"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="310"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      신사
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="240"
+                      cy="300"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="240"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      잠원
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="170"
+                      cy="300"
+                      r="12"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="170"
+                      y="330"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      고속터미널
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="100"
+                      cy="500"
+                      r="12"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="100"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      교대
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="170"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="170"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      남부터미널
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="240"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="240"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      양재
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="310"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="310"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      매봉
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="380"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="380"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      도곡
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="450"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="450"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      대치
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="520"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="520"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      학여울
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="590"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="590"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      대청
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="660"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="660"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      일원
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="730"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="730"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      수서
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="800"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="800"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      가락시장
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="870"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="870"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      경찰병원
+                    </text>
+                  </g>
+                  <g>
+                    <circle
+                      cx="940"
+                      cy="500"
+                      r="10"
+                      fill="#9ca3af"
+                      stroke="white"
+                      stroke-width="4"
+                      class="transition-all cursor-not-allowed"
+                    ></circle>
+                    <text
+                      x="940"
+                      y="530"
+                      text-anchor="middle"
+                      class="text-xs select-none pointer-events-none"
+                      fill="#374151"
+                      font-weight="normal"
+                    >
+                      오금
+                    </text>
+                  </g>
+                </svg>
+              </div>
+              <div
+                class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg"
+              >
+                <p class="text-amber-800 text-sm text-center">
+                  💡 로그인하면 역 마커를 클릭해서 스토리를 볼 수 있어요!
+                </p>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+              <h3 class="text-gray-900 mb-4">랜덤 역 선정</h3>
+              <button
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-shuffle w-5 h-5"
+                >
+                  <path d="m18 14 4 4-4 4"></path>
+                  <path d="m18 2 4 4-4 4"></path>
+                  <path
+                    d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"
+                  ></path>
+                  <path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"></path>
+                  <path
+                    d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"
+                  ></path></svg
+                >랜덤 역 뽑기
+              </button>
+              <p class="text-gray-500 text-sm mt-3 text-center">
+                전체 역 중에서 랜덤으로 선택됩니다
+              </p>
+            </div>
+          </main>
+          <footer class="bg-white border-t border-gray-200 mt-12">
+            <div
+              class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-500 text-sm"
+            >
+              © 2025 HISUBTORY. 서울 지하철 3호선 역사 탐험 프로젝트
+            </div>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

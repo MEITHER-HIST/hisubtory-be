@@ -1,0 +1,36 @@
+<h1>{{ user.username }}님의 여행기록</h1>
+<p>
+    <a href="{% url 'main' %}">메인으로</a> | 
+    <a href="{% url 'logout' %}">로그아웃</a>
+</p>
+
+<p>
+    최근 본 에피소드: {{ recent_count }}개 |
+    저장한 에피소드: {{ bookmark_count }}개
+</p>
+
+<h2>최근 본 이야기</h2>
+<ul>
+    {% for view in recent_views %}
+        <li>
+            <strong>역:</strong> {{ view.episode.station.station_name }} |
+            <strong>에피소드:</strong> {{ view.episode.title }} |
+            <strong>본 시간:</strong> {{ view.viewed_at }}
+        </li>
+    {% empty %}
+        <li>아직 본 에피소드가 없습니다.</li>
+    {% endfor %}
+</ul>
+
+<h2>내 이야기</h2>
+<ul>
+    {% for bookmark in bookmarked_episodes %}
+        <li>
+            <strong>역:</strong> {{ bookmark.episode.station.station_name }} |
+            <strong>에피소드:</strong> {{ bookmark.episode.title }} |
+            <strong>저장 시간:</strong> {{ bookmark.created_at }}
+        </li>
+    {% empty %}
+        <li>저장한 에피소드가 없습니다.</li>
+    {% endfor %}
+</ul>

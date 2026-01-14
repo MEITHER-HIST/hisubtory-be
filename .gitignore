@@ -1,0 +1,23 @@
+# 가상환경 (가장 중요!)
+venv/
+.venv/
+env/
+
+# 파이썬 컴파일 임시 파일
+__pycache__/
+*.pyc
+
+# 데이터베이스 (로컬 테스트용 DB는 보통 올리지 않습니다)
+db.sqlite3
+
+# 미디어/정적 파일 (사용자가 업로드한 이미지 등)
+media/
+staticfiles/
+
+# 운영체제 임시 파일
+.DS_Store
+Thumbs.db
+
+# 환경변수 파일 (비밀번호, API 키 등)
+.env
+ 
