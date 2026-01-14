@@ -15,6 +15,13 @@
 
 ---
 
+### 🧾 Service at a glance
+- 지하철 **역을 선택**하면 해당 역의 역사/스토리를 **짧은 웹툰(에피소드/컷)** 형태로 제공
+- 백엔드는 **JSON API**로 콘텐츠 메타데이터/캡션/유저 활동(열람 기록)을 제공
+- 이미지는 **CloudFront(S3)** 로 분리 서빙해 빠르게 로딩
+
+---
+
 ## 🏗 Architecture (High-level)
 
 ### Request Flow
